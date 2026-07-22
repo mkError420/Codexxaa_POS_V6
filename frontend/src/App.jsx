@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Home from './components/Home';
 import Login from './components/Login';
 import DashboardLayout from './components/DashboardLayout';
 import Dashboard from './components/Dashboard';
@@ -288,7 +289,7 @@ export default function App() {
     );
   }
 
-  // Not logged in — show Login page (with optional suspension message)
+  // Not logged in — show Home page (with optional suspension message)
   if (!user) {
     return (
       <>
@@ -306,12 +307,12 @@ export default function App() {
                 onClick={() => setSuspendedMessage('')}
                 className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold rounded-xl transition-colors"
               >
-                Go to Login
+                Go to Home
               </button>
             </div>
           </div>
         )}
-        <Login onLoginSuccess={handleLoginSuccess} />
+        <Home onLoginSuccess={handleLoginSuccess} />
       </>
     );
   }

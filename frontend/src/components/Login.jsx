@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import API_BASE_URL from '../config';
 
-export default function Login({ onLoginSuccess }) {
+export default function Login({ onLoginSuccess, onBack }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -50,6 +50,19 @@ export default function Login({ onLoginSuccess }) {
       <div className="absolute top-[-10%] left-[-5%] w-96 h-96 bg-slate-600/20 rounded-full blur-3xl animate-pulse" />
       <div className="absolute bottom-[-10%] right-[-5%] w-96 h-96 bg-violet-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-900/10 rounded-full blur-3xl" />
+
+      {/* Back Button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="absolute top-6 left-6 z-20 flex items-center gap-2 px-4 py-2 bg-slate-800/60 hover:bg-slate-800/80 border border-slate-700 text-white rounded-xl transition-all duration-200"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back
+        </button>
+      )}
 
       {/* Login Card */}
       <div className="relative z-10 w-full max-w-md mx-4">
@@ -176,7 +189,7 @@ export default function Login({ onLoginSuccess }) {
             <div className="grid grid-cols-1 gap-2">
               <button
                 type="button"
-                onClick={() => { setEmail('mk.rabbani.cse@gmail.com'); setPassword('123456789'); }}
+                onClick={() => { setEmail('mk.rabbani.cse@gmail.com'); setPassword('*********'); }}
                 className="flex items-center gap-3 w-full text-left bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl px-3 py-2.5 transition-colors group"
               >
                 <span className="text-xs font-bold bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded-full shrink-0">SUPER ADMIN</span>
