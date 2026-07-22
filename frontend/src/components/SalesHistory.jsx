@@ -138,7 +138,7 @@ export default function SalesHistory() {
       triggerAlert('error', 'No profit data available to download.');
       return;
     }
-    
+
     try {
       const doc = new jsPDF();
       const d = filteredProfitData;
@@ -147,7 +147,7 @@ export default function SalesHistory() {
       // Header
       doc.setFontSize(18);
       doc.text('Profit Breakdown Report', 14, 20);
-      
+
       doc.setFontSize(11);
       doc.setTextColor(100);
       doc.text(`Filtered Period: ${d.start_date} to ${d.end_date}`, 14, 28);
@@ -158,10 +158,10 @@ export default function SalesHistory() {
       doc.setTextColor(0);
       doc.text(`Total Cost: BDT ${parseFloat(d.grand_cost).toFixed(3)}`, 14, 45);
       doc.text(`Total Revenue: BDT ${parseFloat(d.grand_revenue).toFixed(3)}`, 14, 52);
-      
+
       doc.setTextColor(isLoss ? 220 : 20, isLoss ? 38 : 160, isLoss ? 38 : 20); // Red if loss, green if profit
       doc.text(`Net Profit: ${isLoss ? '-' : '+'}BDT ${Math.abs(parseFloat(d.grand_profit)).toFixed(3)} (${d.grand_margin}% margin)`, 14, 59);
-      
+
       // Table Data
       const tableColumn = ["#", "Product", "Qty", "Cost Price", "Selling Price", "Profit", "Margin"];
       const tableRows = [];
@@ -422,8 +422,8 @@ export default function SalesHistory() {
   const getFilteredCustomers = () => {
     if (!customerSearch) return customers;
     const lowerTerm = customerSearch.toLowerCase();
-    return customers.filter(c => 
-      c.name.toLowerCase().includes(lowerTerm) || 
+    return customers.filter(c =>
+      c.name.toLowerCase().includes(lowerTerm) ||
       (c.phone && c.phone.toLowerCase().includes(lowerTerm))
     );
   };
@@ -1013,8 +1013,8 @@ export default function SalesHistory() {
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-500">
                   <tr>
                     <th className="p-3 font-semibold">Product</th>
-                    <th className="p-3 font-semibold text-center w-24">Price</th>
                     <th className="p-3 font-semibold text-center w-32">Qty</th>
+                    <th className="p-3 font-semibold text-center w-24">Price</th>
                     <th className="p-3 font-semibold text-right w-24">Subtotal</th>
                     <th className="p-3 font-semibold text-center w-12"></th>
                   </tr>
@@ -1023,16 +1023,6 @@ export default function SalesHistory() {
                   {editSaleData.items.map((item, idx) => (
                     <tr key={idx} className="hover:bg-slate-50/50">
                       <td className="p-3 font-medium text-slate-700">{item.name}</td>
-                      <td className="p-3 text-center text-slate-500">
-                        <input
-                          type="number"
-                          className="w-24 h-8 text-center border border-slate-200 rounded-md text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                          value={item.unit_price}
-                          onChange={(e) => handleEditItemPrice(idx, e.target.value)}
-                          min="0"
-                          step="0.01"
-                        />
-                      </td>
                       <td className="p-3">
                         <div className="flex items-center justify-center">
                           <button onClick={() => handleEditItemQty(idx, item.quantity - 1)} className="w-8 h-8 rounded-l-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold flex items-center justify-center">-</button>
@@ -1054,6 +1044,16 @@ export default function SalesHistory() {
                           />
                           <button onClick={() => handleEditItemQty(idx, item.quantity + 1)} className="w-8 h-8 rounded-r-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold flex items-center justify-center">+</button>
                         </div>
+                      </td>
+                      <td className="p-3 text-center text-slate-500">
+                        <input
+                          type="number"
+                          className="w-24 h-8 text-center border border-slate-200 rounded-md text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          value={item.unit_price}
+                          onChange={(e) => handleEditItemPrice(idx, e.target.value)}
+                          min="0"
+                          step="0.01"
+                        />
                       </td>
                       <td className="p-3 text-right font-bold text-slate-700">
                         <input
@@ -1211,7 +1211,7 @@ export default function SalesHistory() {
       </div>
 
 
-     
+
 
       {/* Summary Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
@@ -1780,7 +1780,7 @@ export default function SalesHistory() {
         </div>
       )}
 
-       {/* Daily Product Sales Summary */}
+      {/* Daily Product Sales Summary */}
       {productDailySales && (
         <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
           <div className="p-4 bg-slate-50/50 border-b border-slate-100">
@@ -2595,13 +2595,12 @@ export default function SalesHistory() {
                                       </span>
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                      <span className={`text-[12px] font-bold px-3 py-1 rounded-full border ${
-                                        isRowLoss
-                                          ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                          : p.margin >= 20
-                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                            : 'bg-amber-50 text-amber-700 border-amber-200'
-                                      }`}>
+                                      <span className={`text-[12px] font-bold px-3 py-1 rounded-full border ${isRowLoss
+                                        ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                        : p.margin >= 20
+                                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                          : 'bg-amber-50 text-amber-700 border-amber-200'
+                                        }`}>
                                         {p.margin}%
                                       </span>
                                     </td>
