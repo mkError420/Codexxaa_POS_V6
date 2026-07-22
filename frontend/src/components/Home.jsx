@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import API_BASE_URL from '../config';
 
 export default function Home({ onLoginSuccess }) {
@@ -8,6 +8,10 @@ export default function Home({ onLoginSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [activeSection, setActiveSection] = useState(null);
+  const [siteSettings, setSiteSettings] = useState({
+    site_name: 'CodexaaPOS++',
+    site_description: 'Modern Point of Sale For Your Business'
+  });
 
   const scrollToSection = (sectionId) => {
     setActiveSection(sectionId);
@@ -16,6 +20,31 @@ export default function Home({ onLoginSuccess }) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
   };
+
+  useEffect(() => {
+    const fetchSiteSettings = async () => {
+      try {
+        console.log('Fetching site settings from:', `${API_BASE_URL}/settings/site`);
+        const response = await fetch(`${API_BASE_URL}/settings/site`);
+        console.log('Site settings response status:', response.status);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Site settings data received:', data);
+          setSiteSettings({
+            site_name: data.site_name || 'CodexaaPOS++',
+            site_description: data.site_description || 'Modern Point of Sale For Your Business'
+          });
+        } else {
+          console.error('Site settings response not OK:', response.status);
+          setSiteSettings({ site_name: 'CodexaaPOS++', site_description: 'Modern Point of Sale For Your Business' });
+        }
+      } catch (err) {
+        console.error("Could not fetch site settings, using defaults.", err);
+        setSiteSettings({ site_name: 'CodexaaPOS++', site_description: 'Modern Point of Sale For Your Business' });
+      }
+    };
+    fetchSiteSettings();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -65,7 +94,7 @@ export default function Home({ onLoginSuccess }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
           </div>
-          <span className="text-white font-bold text-xl tracking-tight">CodexaaPOS++</span>
+          <span className="text-white font-bold text-xl tracking-tight">{siteSettings.site_name}</span>
         </div>
       </nav>
 
@@ -81,10 +110,7 @@ export default function Home({ onLoginSuccess }) {
                 <span className="text-indigo-300 text-xs font-medium">Multi-Tenant POS System</span>
               </div>
               <h1 className="text-4xl lg:text-6xl font-bold text-white leading-tight">
-                Modern Point of Sale
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-400">
-                  For Your Business
-                </span>
+                {siteSettings.site_description}
               </h1>
               <p className="text-slate-400 text-lg max-w-lg leading-relaxed">
                 Streamline your retail operations with our powerful, cloud-based POS solution. Manage inventory, sales, customers, and more from anywhere.

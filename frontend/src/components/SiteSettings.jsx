@@ -13,14 +13,18 @@ export default function SiteSettings() {
   const fetchSiteSettings = async () => {
     setLoading(true);
     try {
+      console.log('Fetching site settings from:', `${API_BASE_URL}/settings/site`);
       const response = await fetch(`${API_BASE_URL}/settings/site`);
+      console.log('Site settings response status:', response.status);
       if (response.ok) {
         const data = await response.json();
+        console.log('Site settings data received:', data);
         setSettings({
           site_name: data.site_name || 'CodexaaPOS++',
           site_description: data.site_description || 'Default Description'
         });
       } else {
+        console.error('Site settings response not OK:', response.status);
         // Fallback for now
         setSettings({ site_name: 'CodexaaPOS++', site_description: 'Modern Point of Sale For Your Business' });
       }
@@ -50,6 +54,8 @@ export default function SiteSettings() {
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
+      console.log('Saving site settings:', settings);
+      console.log('Token exists:', !!token);
       const response = await fetch(`${API_BASE_URL}/settings/site`, {
         method: 'PUT',
         headers: {
@@ -59,13 +65,18 @@ export default function SiteSettings() {
         body: JSON.stringify(settings)
       });
 
+      console.log('Save response status:', response.status);
       if (!response.ok) {
         const resData = await response.json();
+        console.error('Save error response:', resData);
         throw new Error(resData.error || 'Failed to save site settings.');
       }
 
+      const responseData = await response.json();
+      console.log('Save success response:', responseData);
       triggerAlert('success', 'Site settings updated successfully!');
     } catch (err) {
+      console.error('Save error:', err);
       triggerAlert('error', err.message);
     } finally {
       setSaving(false);

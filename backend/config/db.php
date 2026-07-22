@@ -449,6 +449,32 @@ class DB {
                 $pdo->exec("ALTER TABLE `sales` ADD COLUMN `notes` TEXT NULL");
             }
 
+            // Create site_settings table if not exists
+            try {
+                $pdo->exec("
+                    CREATE TABLE IF NOT EXISTS `site_settings` (
+                        `setting_key` VARCHAR(50) NOT NULL,
+                        `setting_value` TEXT NOT NULL,
+                        `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        PRIMARY KEY (`setting_key`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ");
+            } catch (\Exception $e) {
+                error_log("Failed to create site_settings table: " . $e->getMessage());
+            }
+
+            // Insert default site settings
+            try {
+                $pdo->exec("
+                    INSERT INTO `site_settings` (`setting_key`, `setting_value`) VALUES
+                    ('site_name', 'CodexaaPOS++'),
+                    ('site_description', 'Modern Point of Sale For Your Business')
+                    ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`);
+                ");
+            } catch (\Exception $e) {
+                error_log("Failed to insert default site settings: " . $e->getMessage());
+            }
+
             // Seed Super Admin if table has no users
             $stmt = $pdo->query("SELECT COUNT(*) FROM `users` WHERE `role` = 'super_admin'");
             if ($stmt->fetchColumn() == 0) {
