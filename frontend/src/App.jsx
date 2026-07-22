@@ -9,6 +9,7 @@ import Suppliers from './components/Suppliers';
 import Customers from './components/Customers';
 import SalesHistory from './components/SalesHistory';
 import ManageStaff from './components/ManageStaff';
+import SiteSettings from './components/SiteSettings';
 import Settings from './components/Settings';
 import ManageShops from './components/ManageShops';
 import SystemUsers from './components/SystemUsers';
@@ -224,6 +225,7 @@ export default function App() {
         case '/other-sales': return <OtherSales />;
         case '/all-transactions': return <AllTransactions />;
         case '/total-revenue': return <TotalRevenue />;
+        case '/site-settings': return <SiteSettings />;
         case '/settings': return <Settings />;
         default: return <Dashboard />;
       }

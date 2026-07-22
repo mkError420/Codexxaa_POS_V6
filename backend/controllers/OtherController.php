@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Other Controller (Wastage, Customer Returns, Adjustments, Other Costs, Shops, Users/Staff)
  */
@@ -7,6 +8,68 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../middleware/auth.php';
 
 class OtherController {
+
+    // ==========================================
+    // SITE SETTINGS
+    // ==========================================
+
+    public static function getSiteSettings() {
+        // This is a public endpoint, no authentication needed
+        try {
+            $stmt = DB::query('SELECT setting_key, setting_value FROM site_settings');
+            $settingsRaw = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+            
+            $settings = [
+                'site_name' => $settingsRaw['site_name'] ?? 'NextPOS++',
+                'site_description' => $settingsRaw['site_description'] ?? 'Modern Point of Sale For Your Business'
+            ];
+
+            header('Content-Type: application/json');
+            echo json_encode($settings);
+
+        } catch (\Exception $e) {
+            error_log('Fetch site settings error: ' . $e->getMessage());
+            // Fallback for when table doesn't exist yet
+            header('Content-Type: application/json');
+            echo json_encode([
+                'site_name' => 'NextPOS++',
+                'site_description' => 'Modern Point of Sale For Your Business'
+            ]);
+        }
+    }
+
+    public static function updateSiteSettings($requestData) {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        $siteName = $requestData['site_name'] ?? null;
+        $siteDescription = $requestData['site_description'] ?? null;
+
+        if ($siteName === null || $siteDescription === null) {
+            Auth::jsonError('site_name and site_description are required.', 400);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Use INSERT ... ON DUPLICATE KEY UPDATE for an atomic upsert
+            DB::query(
+                'INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?), (?, ?)
+                 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)',
+                ['site_name', $siteName, 'site_description', $siteDescription]
+            );
+
+            DB::commit();
+
+            header('Content-Type: application/json');
+            echo json_encode(['message' => 'Site settings updated successfully.']);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            error_log('Update site settings error: ' . $e->getMessage());
+            Auth::jsonError('Server error updating site settings.', 500);
+        }
+    }
 
     // ==========================================
     // OTHER COSTS
