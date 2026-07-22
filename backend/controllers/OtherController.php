@@ -20,7 +20,7 @@ class OtherController {
             $settingsRaw = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
             
             $settings = [
-                'site_name' => $settingsRaw['site_name'] ?? 'NextPOS++',
+                'site_name' => $settingsRaw['site_name'] ?? 'CodexaaPOS++',
                 'site_description' => $settingsRaw['site_description'] ?? 'Modern Point of Sale For Your Business'
             ];
 
@@ -32,7 +32,7 @@ class OtherController {
             // Fallback for when table doesn't exist yet
             header('Content-Type: application/json');
             echo json_encode([
-                'site_name' => 'NextPOS++',
+                'site_name' => 'CodexaaPOS++',
                 'site_description' => 'Modern Point of Sale For Your Business'
             ]);
         }

@@ -3,9 +3,10 @@
 ## Database Setup
 
 The database configuration is already set up in `backend/config/db.php` with your InfinityFree credentials:
-- Host: sql107.infinityfree.com
-- User: if0_42333746
-- Database: if0_42333746_mk_pos
+- Host: sql309.infinityfree.com
+- User: if0_42451104
+- Database: if0_42451104_codexxa_pos
+- Site URL: https://codexaa.xo.je/
 
 ## File Upload Structure
 

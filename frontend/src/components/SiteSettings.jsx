@@ -17,16 +17,16 @@ export default function SiteSettings() {
       if (response.ok) {
         const data = await response.json();
         setSettings({
-          site_name: data.site_name || 'NextPOS++',
+          site_name: data.site_name || 'CodexaaPOS++',
           site_description: data.site_description || 'Default Description'
         });
       } else {
         // Fallback for now
-        setSettings({ site_name: 'NextPOS++', site_description: 'Modern Point of Sale For Your Business' });
+        setSettings({ site_name: 'CodexaaPOS++', site_description: 'Modern Point of Sale For Your Business' });
       }
     } catch (err) {
       console.error("Could not fetch site settings, using fallback.", err);
-      setSettings({ site_name: 'NextPOS++', site_description: 'Modern Point of Sale For Your Business' });
+      setSettings({ site_name: 'CodexaaPOS++', site_description: 'Modern Point of Sale For Your Business' });
     } finally {
       setLoading(false);
     }

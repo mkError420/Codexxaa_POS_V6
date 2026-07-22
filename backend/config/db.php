@@ -24,10 +24,10 @@ class DB {
                 $defaultPass = '';
                 $defaultDb   = 'multitenant_pos';
             } else {
-                $defaultHost = 'sql107.infinityfree.com';
-                $defaultUser = 'if0_42333746';
-                $defaultPass = 'VHxnlDleyPf09'; // Your production DB password
-                $defaultDb   = 'if0_42333746_mk_pos';
+                $defaultHost = 'sql309.infinityfree.com';
+                $defaultUser = 'if0_42451104';
+                $defaultPass = 'I8Kw8aZkldJO'; // Your production DB password
+                $defaultDb   = 'if0_42451104_codexxa_pos';
             }
 
             // Only use environment variables if a .env file actually exists in the project.

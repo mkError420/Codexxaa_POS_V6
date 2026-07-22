@@ -1,9 +1,7 @@
 -- MySQL Database DDL for Web-Based Multi-Tenant POS System
 -- Core Design: Single Database with 'shop_id' tenant isolation.
--- Note: For InfinityFree, use the pre-created database: if0_42451104_codexaa
--- Import this schema directly into your existing database
-
-USE `if0_42451104_codexaa`;
+-- Note: For InfinityFree, import this schema directly into your database (if0_42451104_codexaa_pos)
+-- Do NOT include USE statement - you're already connected to your database in phpMyAdmin
 
 -- -----------------------------------------------------
 -- Table `shops` (Tenants)

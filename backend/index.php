@@ -286,6 +286,8 @@ $routes = [
         // Users
         '/^users$/' => function() { OtherController::listUsers(); },
         '/^users\/staff$/' => function() { OtherController::listStaff(); },
+        // Site Settings
+        '/^settings\/site$/' => function() { OtherController::getSiteSettings(); },
     ],
     'POST' => [
         // Auth
@@ -364,6 +366,8 @@ $routes = [
         // Users
         '/^users\/(\d+)$/' => function($args, $data) { OtherController::updateUser($args[0], $data); },
         '/^users\/staff\/(\d+)$/' => function($args, $data) { OtherController::updateStaff($args[0], $data); },
+        // Site Settings
+        '/^settings\/site$/' => function($args, $data) { OtherController::updateSiteSettings($data); },
     ],
     'DELETE' => [
         // Products
