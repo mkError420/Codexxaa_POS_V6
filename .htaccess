@@ -1,0 +1,12 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  
+  # Redirect all frontend requests to index.html (SPA routing)
+  RewriteCond %{REQUEST_URI} !^/backend/
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^(.*)$ /frontend/index.html [L,QSA]
+  
+  # Backend API requests
+  RewriteRule ^backend/(.*)$ /backend/index.php [L,QSA]
+</IfModule>
