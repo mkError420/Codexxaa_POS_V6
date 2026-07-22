@@ -7,6 +7,15 @@ export default function Home({ onLoginSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [activeSection, setActiveSection] = useState(null);
+
+  const scrollToSection = (sectionId) => {
+    setActiveSection(sectionId);
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -95,7 +104,7 @@ export default function Home({ onLoginSuccess }) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Watch Demo
+                Watch Details
               </button>
             </div>
 
@@ -330,20 +339,285 @@ export default function Home({ onLoginSuccess }) {
         </div>
       </section>
 
+      {/* Pricing Section */}
+      <section className="relative z-10 py-20 lg:py-32 bg-gradient-to-b from-slate-950/50 to-indigo-950/30">
+        <div className="max-w-7xl mx-auto px-6 lg:px-12">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-4">Choose Your Plan</h2>
+            <p className="text-slate-400 text-lg max-w-3xl mx-auto">
+              Flexible pricing plans to fit your business needs. Start with a free trial or choose a plan that works for you.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Starter Plan */}
+            <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 hover:border-indigo-500/50 transition-all duration-300">
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-white mb-2">Starter</h3>
+                <p className="text-slate-400 text-sm">Perfect for small businesses</p>
+              </div>
+              <div className="mb-6">
+                <span className="text-4xl font-bold text-white">$29</span>
+                <span className="text-slate-400 text-sm">/month</span>
+              </div>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-center gap-3 text-slate-300 text-sm">
+                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  1 Shop Location
+                </li>
+                <li className="flex items-center gap-3 text-slate-300 text-sm">
+                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Up to 500 Products
+                </li>
+                <li className="flex items-center gap-3 text-slate-300 text-sm">
+                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  2 Staff Accounts
+                </li>
+                <li className="flex items-center gap-3 text-slate-300 text-sm">
+                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Basic Analytics
+                </li>
+                <li className="flex items-center gap-3 text-slate-300 text-sm">
+                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Email Support
+                </li>
+              </ul>
+              <button className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-xl transition-all duration-200">
+                Get Started
+              </button>
+            </div>
+
+            {/* Professional Plan */}
+            <div className="bg-gradient-to-b from-indigo-900/50 to-violet-900/50 backdrop-blur-xl border-2 border-indigo-500 rounded-3xl p-8 relative transform scale-105 shadow-2xl shadow-indigo-600/30">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-xs font-bold px-4 py-1 rounded-full">
+                MOST POPULAR
+              </div>
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-white mb-2">Professional</h3>
+                <p className="text-slate-400 text-sm">For growing businesses</p>
+              </div>
+              <div className="mb-6">
+                <span className="text-4xl font-bold text-white">$79</span>
+                <span className="text-slate-400 text-sm">/month</span>
+              </div>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-center gap-3 text-slate-300 text-sm">
+                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Up to 5 Shop Locations
+                </li>
+                <li className="flex items-center gap-3 text-slate-300 text-sm">
+                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Unlimited Products
+                </li>
+                <li className="flex items-center gap-3 text-slate-300 text-sm">
+                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  10 Staff Accounts
+                </li>
+                <li className="flex items-center gap-3 text-slate-300 text-sm">
+                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Advanced Analytics
+                </li>
+                <li className="flex items-center gap-3 text-slate-300 text-sm">
+                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Priority Support
+                </li>
+                <li className="flex items-center gap-3 text-slate-300 text-sm">
+                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  API Access
+                </li>
+              </ul>
+              <button className="w-full py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg">
+                Get Started
+              </button>
+            </div>
+
+            {/* Enterprise Plan */}
+            <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 hover:border-indigo-500/50 transition-all duration-300">
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-white mb-2">Enterprise</h3>
+                <p className="text-slate-400 text-sm">For large organizations</p>
+              </div>
+              <div className="mb-6">
+                <span className="text-4xl font-bold text-white">$199</span>
+                <span className="text-slate-400 text-sm">/month</span>
+              </div>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-center gap-3 text-slate-300 text-sm">
+                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Unlimited Shop Locations
+                </li>
+                <li className="flex items-center gap-3 text-slate-300 text-sm">
+                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Unlimited Products
+                </li>
+                <li className="flex items-center gap-3 text-slate-300 text-sm">
+                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Unlimited Staff Accounts
+                </li>
+                <li className="flex items-center gap-3 text-slate-300 text-sm">
+                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Custom Analytics
+                </li>
+                <li className="flex items-center gap-3 text-slate-300 text-sm">
+                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  24/7 Dedicated Support
+                </li>
+                <li className="flex items-center gap-3 text-slate-300 text-sm">
+                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  White-label Solution
+                </li>
+                <li className="flex items-center gap-3 text-slate-300 text-sm">
+                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Custom Integrations
+                </li>
+              </ul>
+              <button className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-xl transition-all duration-200">
+                Contact Sales
+              </button>
+            </div>
+          </div>
+
+          <div className="text-center mt-12">
+            <p className="text-slate-400 text-sm">
+              All plans include a 14-day free trial. No credit card required.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Privacy & Terms Section */}
+      <section id="privacy" className="relative z-10 py-20 lg:py-32 bg-slate-950/50">
+        <div className="max-w-7xl mx-auto px-6 lg:px-12">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-4">Privacy Policy & Terms of Service</h2>
+            <p className="text-slate-400 text-lg">Your privacy is important to us. Learn how we protect your data and understand our terms.</p>
+          </div>
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Privacy Policy */}
+            <div className="bg-slate-800/50 backdrop-blur-lg border border-slate-700/50 rounded-2xl p-8 space-y-6">
+              <h3 className="text-2xl font-bold text-white mb-4">Privacy Policy</h3>
+              <div>
+                <h4 className="text-lg font-bold text-white mb-2">Data Collection</h4>
+                <p className="text-slate-400 text-sm leading-relaxed">We collect only the necessary data to provide our POS services, including your business information, transaction records, and customer data. All data is encrypted and stored securely.</p>
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-white mb-2">Data Usage</h4>
+                <p className="text-slate-400 text-sm leading-relaxed">Your data is used solely to operate and improve our services. We never sell or share your data with third parties without your explicit consent.</p>
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-white mb-2">Security Measures</h4>
+                <p className="text-slate-400 text-sm leading-relaxed">We implement industry-standard security protocols including SSL encryption, regular security audits, and access controls to protect your information.</p>
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-white mb-2">Your Rights</h4>
+                <p className="text-slate-400 text-sm leading-relaxed">You have the right to access, modify, or delete your data at any time. Contact our support team for any privacy-related requests.</p>
+              </div>
+            </div>
+            {/* Terms of Service */}
+            <div id="terms" className="bg-slate-800/50 backdrop-blur-lg border border-slate-700/50 rounded-2xl p-8 space-y-6">
+              <h3 className="text-2xl font-bold text-white mb-4">Terms of Service</h3>
+              <div>
+                <h4 className="text-lg font-bold text-white mb-2">Acceptance of Terms</h4>
+                <p className="text-slate-400 text-sm leading-relaxed">By using CodexaaPOS++, you agree to these terms of service. If you do not agree, please do not use our services.</p>
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-white mb-2">Service Description</h4>
+                <p className="text-slate-400 text-sm leading-relaxed">CodexaaPOS++ provides a multi-tenant point of sale system for businesses to manage inventory, sales, customers, and operations.</p>
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-white mb-2">User Responsibilities</h4>
+                <p className="text-slate-400 text-sm leading-relaxed">Users are responsible for maintaining account security, providing accurate information, and complying with all applicable laws and regulations.</p>
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-white mb-2">Limitation of Liability</h4>
+                <p className="text-slate-400 text-sm leading-relaxed">CodexaaPOS++ shall not be liable for any indirect, incidental, or consequential damages arising from the use of our services.</p>
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-white mb-2">Termination</h4>
+                <p className="text-slate-400 text-sm leading-relaxed">We reserve the right to terminate or suspend access to our services at any time, with or without cause, with or without notice.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Support Section */}
+      <section id="support" className="relative z-10 py-20 lg:py-32 bg-slate-950/50">
+        <div className="max-w-4xl mx-auto px-6 lg:px-12">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-4">Support</h2>
+            <p className="text-slate-400 text-lg">Get help with CodexaaPOS++ services.</p>
+          </div>
+          <div className="bg-slate-800/50 backdrop-blur-lg border border-slate-700/50 rounded-2xl p-8 space-y-6">
+            <div>
+              <h3 className="text-xl font-bold text-white mb-3">Contact Us</h3>
+              <p className="text-slate-400 text-sm leading-relaxed">For technical support, billing inquiries, or general questions, please reach out to our support team.</p>
+              <div className="mt-4 space-y-2">
+                <p className="text-slate-300 text-sm"><span className="font-semibold">Email:</span> support@codexaapos.com</p>
+                <p className="text-slate-300 text-sm"><span className="font-semibold">Phone:</span> +1 (555) 123-4567</p>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white mb-3">Documentation</h3>
+              <p className="text-slate-400 text-sm leading-relaxed">Access our comprehensive documentation for guides, tutorials, and FAQs to help you make the most of CodexaaPOS++.</p>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white mb-3">Response Time</h3>
+              <p className="text-slate-400 text-sm leading-relaxed">Our support team typically responds within 24-48 hours. For urgent issues, please indicate the priority level in your message.</p>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white mb-3">Community</h3>
+              <p className="text-slate-400 text-sm leading-relaxed">Join our community forums to connect with other users, share tips, and get help from experienced CodexaaPOS++ users.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="relative z-10 border-t border-slate-800 px-6 py-8 lg:px-12">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-center gap-4">
           <p className="text-slate-500 text-sm">
-            Multi-Tenant Point of Sale System &copy; {new Date().getFullYear()} developed by{' '}
+            CodexaaPOS++ &copy; {new Date().getFullYear()} developed by{' '}
             <a href="https://its-mk.netlify.app/" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 transition-colors">
               MK
             </a>
           </p>
-          <div className="flex gap-6">
-            <a href="#" className="text-slate-500 hover:text-slate-300 text-sm transition-colors">Privacy</a>
-            <a href="#" className="text-slate-500 hover:text-slate-300 text-sm transition-colors">Terms</a>
-            <a href="#" className="text-slate-500 hover:text-slate-300 text-sm transition-colors">Support</a>
-          </div>
         </div>
       </footer>
     </div>
