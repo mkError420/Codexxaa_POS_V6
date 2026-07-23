@@ -484,6 +484,33 @@ class DB {
                 ");
             }
 
+            // Add loyalty program settings to shops table
+            if ($tableExists('shops') && !$columnExists('shops', 'loyalty_enabled')) {
+                $pdo->exec("ALTER TABLE `shops` ADD COLUMN `loyalty_enabled` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Whether loyalty program is enabled (0=disabled, 1=enabled)'");
+            }
+            if ($tableExists('shops') && !$columnExists('shops', 'loyalty_point_earn_rate')) {
+                $pdo->exec("ALTER TABLE `shops` ADD COLUMN `loyalty_point_earn_rate` DECIMAL(10,2) NOT NULL DEFAULT 100.00 COMMENT 'Amount of purchase required to earn 1 loyalty point'");
+            }
+            if ($tableExists('shops') && !$columnExists('shops', 'loyalty_point_value')) {
+                $pdo->exec("ALTER TABLE `shops` ADD COLUMN `loyalty_point_value` DECIMAL(10,2) NOT NULL DEFAULT 1.00 COMMENT 'Monetary value of 1 loyalty point'");
+            }
+
+            // Add loyalty_points column to customers table if not exists
+            if ($tableExists('customers') && !$columnExists('customers', 'loyalty_points')) {
+                $pdo->exec("ALTER TABLE `customers` ADD COLUMN `loyalty_points` INT NOT NULL DEFAULT 0 COMMENT 'Customer loyalty points balance'");
+            }
+
+            // Add loyalty columns to sales table if not exists
+            if ($tableExists('sales') && !$columnExists('sales', 'points_earned')) {
+                $pdo->exec("ALTER TABLE `sales` ADD COLUMN `points_earned` INT NOT NULL DEFAULT 0 COMMENT 'Loyalty points earned from this sale'");
+            }
+            if ($tableExists('sales') && !$columnExists('sales', 'points_redeemed')) {
+                $pdo->exec("ALTER TABLE `sales` ADD COLUMN `points_redeemed` INT NOT NULL DEFAULT 0 COMMENT 'Loyalty points redeemed in this sale'");
+            }
+            if ($tableExists('sales') && !$columnExists('sales', 'points_redeemed_value')) {
+                $pdo->exec("ALTER TABLE `sales` ADD COLUMN `points_redeemed_value` DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT 'Monetary value of redeemed points'");
+            }
+
         } catch (\PDOException $e) {
             error_log("Migration error: " . $e->getMessage());
             file_put_contents(__DIR__ . '/migration_error.txt', "Migration error: " . $e->getMessage());

@@ -7,6 +7,8 @@ export default function ManualOrders() {
   const [products, setProducts] = useState([]);
   const [salesHistory, setSalesHistory] = useState([]);
   const [currentSalesPage, setCurrentSalesPage] = useState(1);
+  const [currentCreditPage, setCurrentCreditPage] = useState(1);
+  const [currentCashPage, setCurrentCashPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [alert, setAlert] = useState(null);
@@ -905,7 +907,7 @@ export default function ManualOrders() {
                       <td colSpan="3" className="py-8 text-center text-slate-400">No cash sales recorded.</td>
                     </tr>
                   ) : (
-                    cashOrders.map((order) => (
+                    cashOrders.slice((currentCashPage - 1) * 10, currentCashPage * 10).map((order) => (
                       <tr key={order.id} className="hover:bg-slate-50/40">
                         <td className="py-2.5 pr-2">
                           <div className="font-semibold text-slate-800">{order.salesman_name}</div>
@@ -949,6 +951,61 @@ export default function ManualOrders() {
                 </tbody>
               </table>
             </div>
+
+            {/* Cash Sales Pagination Controls */}
+            {cashOrders.length > 0 && (
+              <div className="pt-3 border-t border-slate-100 flex flex-wrap justify-between items-center gap-2 text-xs">
+                <span className="text-slate-500 font-medium text-[11px]">
+                  Showing {((currentCashPage - 1) * 10) + 1} - {Math.min(currentCashPage * 10, cashOrders.length)} of {cashOrders.length} orders
+                </span>
+
+                <div className="flex items-center space-x-1">
+                  {/* Previous Button */}
+                  <button
+                    type="button"
+                    onClick={() => setCurrentCashPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentCashPage === 1}
+                    className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-xs transition-colors flex items-center space-x-1"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    <span>Prev</span>
+                  </button>
+
+                  {/* Page Number Buttons (up to 20 pages max) */}
+                  {Array.from(
+                    { length: Math.min(20, Math.ceil(cashOrders.length / 10) || 1) },
+                    (_, i) => i + 1
+                  ).map(pageNum => (
+                    <button
+                      key={pageNum}
+                      type="button"
+                      onClick={() => setCurrentCashPage(pageNum)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${currentCashPage === pageNum
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
+
+                  {/* Next Button */}
+                  <button
+                    type="button"
+                    onClick={() => setCurrentCashPage(prev => Math.min(Math.min(20, Math.ceil(cashOrders.length / 10) || 1), prev + 1))}
+                    disabled={currentCashPage >= Math.min(20, Math.ceil(cashOrders.length / 10) || 1)}
+                    className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-xs transition-colors flex items-center space-x-1"
+                  >
+                    <span>Next</span>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -986,7 +1043,7 @@ export default function ManualOrders() {
                     <td colSpan="3" className="py-8 text-center text-slate-400">No credit sales recorded.</td>
                   </tr>
                 ) : (
-                  creditOrders.map((order) => (
+                  creditOrders.slice((currentCreditPage - 1) * 10, currentCreditPage * 10).map((order) => (
                     <tr key={order.id} className="hover:bg-slate-50/40">
                       <td className="py-2.5 pr-2">
                         <div className="font-semibold text-slate-800">{order.salesman_name}</div>
@@ -1046,6 +1103,61 @@ export default function ManualOrders() {
               </tbody>
             </table>
           </div>
+
+          {/* Credit Sales Pagination Controls */}
+          {creditOrders.length > 0 && (
+            <div className="pt-3 border-t border-slate-100 flex flex-wrap justify-between items-center gap-2 text-xs">
+              <span className="text-slate-500 font-medium text-[11px]">
+                Showing {((currentCreditPage - 1) * 10) + 1} - {Math.min(currentCreditPage * 10, creditOrders.length)} of {creditOrders.length} orders
+              </span>
+
+              <div className="flex items-center space-x-1">
+                {/* Previous Button */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentCreditPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentCreditPage === 1}
+                  className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-xs transition-colors flex items-center space-x-1"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                  </svg>
+                  <span>Prev</span>
+                </button>
+
+                {/* Page Number Buttons (up to 20 pages max) */}
+                {Array.from(
+                  { length: Math.min(20, Math.ceil(creditOrders.length / 10) || 1) },
+                  (_, i) => i + 1
+                ).map(pageNum => (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    onClick={() => setCurrentCreditPage(pageNum)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${currentCreditPage === pageNum
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+
+                {/* Next Button */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentCreditPage(prev => Math.min(Math.min(20, Math.ceil(creditOrders.length / 10) || 1), prev + 1))}
+                  disabled={currentCreditPage >= Math.min(20, Math.ceil(creditOrders.length / 10) || 1)}
+                  className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-xs transition-colors flex items-center space-x-1"
+                >
+                  <span>Next</span>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* COLUMN 3: SALES HISTORY */}
@@ -1445,12 +1557,12 @@ export default function ManualOrders() {
                             </div>
                           )}
                         </div>
-                          {item.product_id && item.cost_price !== '' && item.cost_price !== undefined && (
-                            <div className="mt-1.5 flex items-center gap-1.5">
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cost Price:</span>
-                              <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">৳{parseFloat(item.cost_price).toFixed(2)}</span>
-                            </div>
-                          )}
+                        {item.product_id && item.cost_price !== '' && item.cost_price !== undefined && (
+                          <div className="mt-1.5 flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cost Price:</span>
+                            <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">৳{parseFloat(item.cost_price).toFixed(2)}</span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="w-full md:w-24">
@@ -1530,9 +1642,9 @@ export default function ManualOrders() {
                       min="0"
                       max="100"
                       step="0.1"
-                      onChange={(e) => setFormData(prev => ({ 
-                        ...prev, 
-                        discountPercent: Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)) 
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        discountPercent: Math.min(100, Math.max(0, parseFloat(e.target.value) || 0))
                       }))}
                       disabled={parseFloat(formData.discountAmount || 0) > 0}
                       placeholder="E.g. 10"
@@ -1547,9 +1659,9 @@ export default function ManualOrders() {
                       value={formData.discountAmount || ''}
                       min="0"
                       step="1"
-                      onChange={(e) => setFormData(prev => ({ 
-                        ...prev, 
-                        discountAmount: Math.max(0, parseFloat(e.target.value) || 0) 
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        discountAmount: Math.max(0, parseFloat(e.target.value) || 0)
                       }))}
                       disabled={parseFloat(formData.discountPercent || 0) > 0}
                       placeholder="E.g. 50"
