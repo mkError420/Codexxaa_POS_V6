@@ -16,6 +16,28 @@ export default function Home({ onLoginSuccess }) {
     active_shop_count: 0
   });
   const [pricingPlans, setPricingPlans] = useState([]);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
+  const [purchaseForm, setPurchaseForm] = useState({
+    user_name: '',
+    user_email: '',
+    user_phone: '',
+    payment_method: 'other',
+    notes: ''
+  });
+  const [purchaseLoading, setPurchaseLoading] = useState(false);
+  const [purchaseError, setPurchaseError] = useState('');
+  const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+  const [showPaymentStep, setShowPaymentStep] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState({
+    transaction_id: '',
+    bank_name: '',
+    account_number: '',
+    card_last_four: '',
+    payment_proof: ''
+  });
 
   const scrollToSection = (sectionId) => {
     setActiveSection(sectionId);
@@ -70,8 +92,22 @@ export default function Home({ onLoginSuccess }) {
       }
     };
 
+    const fetchPaymentMethods = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/payment-methods/active`);
+        if (response.ok) {
+          const data = await response.json();
+          setPaymentMethods(data);
+        }
+      } catch (err) {
+        console.error("Could not fetch payment methods.", err);
+        setPaymentMethods([]);
+      }
+    };
+
     fetchSiteSettings();
     fetchPricingPlans();
+    fetchPaymentMethods();
   }, []);
 
   const handleSubmit = async (e) => {
@@ -103,6 +139,96 @@ export default function Home({ onLoginSuccess }) {
     } catch (err) {
       setError('Cannot connect to server. Make sure the backend is running.');
       setLoading(false);
+    }
+  };
+
+  const handlePurchasePlan = (plan) => {
+    setSelectedPlan(plan);
+    setSelectedPaymentMethod(null);
+    setShowPurchaseModal(true);
+    setShowPaymentStep(false);
+    setPurchaseError('');
+    setPurchaseSuccess(false);
+    setPurchaseForm({
+      user_name: '',
+      user_email: '',
+      user_phone: '',
+      payment_method: 'other',
+      notes: ''
+    });
+    setPaymentDetails({
+      transaction_id: '',
+      bank_name: '',
+      account_number: '',
+      card_last_four: '',
+      payment_proof: ''
+    });
+  };
+
+  const handleProceedToPayment = (e) => {
+    e.preventDefault();
+    if (!purchaseForm.user_name || !purchaseForm.user_email) {
+      setPurchaseError('Please fill in required fields');
+      return;
+    }
+    if (!purchaseForm.payment_method || purchaseForm.payment_method === 'other') {
+      setPurchaseError('Please select a payment method');
+      return;
+    }
+    // Find the selected payment method object
+    const method = paymentMethods.find(m => m.id === parseInt(purchaseForm.payment_method));
+    setSelectedPaymentMethod(method);
+    setShowPaymentStep(true);
+    setPurchaseError('');
+  };
+
+  const handlePurchaseSubmit = async (e) => {
+    e.preventDefault();
+    setPurchaseError('');
+    setPurchaseLoading(true);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/plan-purchases`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+          plan_id: selectedPlan.id,
+          user_name: purchaseForm.user_name,
+          user_email: purchaseForm.user_email,
+          user_phone: purchaseForm.user_phone,
+          payment_method: selectedPaymentMethod?.type || purchaseForm.payment_method,
+          payment_method_id: selectedPaymentMethod?.id || null,
+          notes: purchaseForm.notes,
+          transaction_id: paymentDetails.transaction_id,
+          bank_name: paymentDetails.bank_name,
+          account_number: paymentDetails.account_number,
+          card_last_four: paymentDetails.card_last_four,
+          payment_proof: paymentDetails.payment_proof
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setPurchaseError(data.error || 'Purchase failed. Please try again.');
+        setPurchaseLoading(false);
+        return;
+      }
+
+      setPurchaseSuccess(true);
+      setPurchaseLoading(false);
+      
+      // Close modal after 2 seconds
+      setTimeout(() => {
+        setShowPurchaseModal(false);
+        setPurchaseSuccess(false);
+      }, 2000);
+    } catch (err) {
+      setPurchaseError('Cannot connect to server. Make sure the backend is running.');
+      setPurchaseLoading(false);
     }
   };
 
@@ -447,7 +573,10 @@ export default function Home({ onLoginSuccess }) {
                     </li>
                   ))}
                 </ul>
-                <button className="w-full py-3 ${plan.is_popular ? 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700' : 'bg-slate-700 hover:bg-slate-600'} text-white font-semibold rounded-xl transition-all duration-200 shadow-lg">
+                <button 
+                  onClick={() => handlePurchasePlan(plan)}
+                  className="w-full py-3 ${plan.is_popular ? 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700' : 'bg-slate-700 hover:bg-slate-600'} text-white font-semibold rounded-xl transition-all duration-200 shadow-lg"
+                >
                   {plan.button_text}
                 </button>
               </div>
@@ -561,6 +690,225 @@ export default function Home({ onLoginSuccess }) {
           </p>
         </div>
       </footer>
+
+      {/* Purchase Modal */}
+      {showPurchaseModal && selectedPlan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-white">Purchase Plan</h3>
+              <button
+                onClick={() => setShowPurchaseModal(false)}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {purchaseSuccess ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h4 className="text-lg font-semibold text-white mb-2">Purchase Successful!</h4>
+                <p className="text-slate-400 text-sm">Thank you for purchasing {selectedPlan.name} plan.</p>
+              </div>
+            ) : showPaymentStep ? (
+              <form onSubmit={handlePurchaseSubmit} className="space-y-4">
+                <div className="bg-slate-700/50 rounded-xl p-4 mb-4">
+                  <h4 className="font-semibold text-white mb-1">{selectedPlan.name}</h4>
+                  <p className="text-2xl font-bold text-indigo-400">BDT {selectedPlan.price}<span className="text-sm text-slate-400">/{selectedPlan.period}</span></p>
+                  <p className="text-slate-400 text-sm mt-1">Payment Method: {selectedPaymentMethod?.name || 'Other'}</p>
+                </div>
+
+                {/* Payment Details Display */}
+                {selectedPaymentMethod && (
+                  <div className="bg-indigo-900/30 border border-indigo-700/50 rounded-xl p-4 mb-4">
+                    <h4 className="text-sm font-semibold text-indigo-300 mb-3">Send payment to:</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Method:</span>
+                        <span className="text-white font-medium">{selectedPaymentMethod.name}</span>
+                      </div>
+                      {selectedPaymentMethod.phone_number && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Number:</span>
+                          <span className="text-white font-mono">{selectedPaymentMethod.phone_number}</span>
+                        </div>
+                      )}
+                      {selectedPaymentMethod.account_number && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Account:</span>
+                          <span className="text-white font-mono">{selectedPaymentMethod.account_number}</span>
+                        </div>
+                      )}
+                      {selectedPaymentMethod.account_holder && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Holder:</span>
+                          <span className="text-white">{selectedPaymentMethod.account_holder}</span>
+                        </div>
+                      )}
+                      {selectedPaymentMethod.branch_name && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Branch:</span>
+                          <span className="text-white">{selectedPaymentMethod.branch_name}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {purchaseError && (
+                  <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-3 text-rose-300 text-sm">
+                    {purchaseError}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Transaction ID *</label>
+                  <input
+                    type="text"
+                    required
+                    value={paymentDetails.transaction_id}
+                    onChange={(e) => setPaymentDetails({...paymentDetails, transaction_id: e.target.value})}
+                    className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter transaction ID or reference number"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Payment Proof (Screenshot URL)</label>
+                  <input
+                    type="text"
+                    value={paymentDetails.payment_proof}
+                    onChange={(e) => setPaymentDetails({...paymentDetails, payment_proof: e.target.value})}
+                    className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Paste screenshot URL (optional)"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowPaymentStep(false)}
+                    className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-xl py-3 text-sm transition-colors"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={purchaseLoading}
+                    className="flex-1 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-semibold rounded-xl py-3 text-sm transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {purchaseLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Processing...
+                      </span>
+                    ) : (
+                      `Confirm Payment BDT ${selectedPlan.price}`
+                    )}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleProceedToPayment} className="space-y-4">
+                <div className="bg-slate-700/50 rounded-xl p-4 mb-4">
+                  <h4 className="font-semibold text-white mb-1">{selectedPlan.name}</h4>
+                  <p className="text-2xl font-bold text-indigo-400">BDT {selectedPlan.price}<span className="text-sm text-slate-400">/{selectedPlan.period}</span></p>
+                </div>
+
+                {purchaseError && (
+                  <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-3 text-rose-300 text-sm">
+                    {purchaseError}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={purchaseForm.user_name}
+                    onChange={(e) => setPurchaseForm({...purchaseForm, user_name: e.target.value})}
+                    className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter your full name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Email Address *</label>
+                  <input
+                    type="email"
+                    required
+                    value={purchaseForm.user_email}
+                    onChange={(e) => setPurchaseForm({...purchaseForm, user_email: e.target.value})}
+                    className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter your email"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={purchaseForm.user_phone}
+                    onChange={(e) => setPurchaseForm({...purchaseForm, user_phone: e.target.value})}
+                    className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter your phone number"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Payment Method *</label>
+                  <select
+                    required
+                    value={purchaseForm.payment_method}
+                    onChange={(e) => setPurchaseForm({...purchaseForm, payment_method: e.target.value})}
+                    className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="">Select a payment method</option>
+                    {paymentMethods.length === 0 ? (
+                      <option value="cash">Cash</option>
+                    ) : (
+                      paymentMethods.map((method) => (
+                        <option key={method.id} value={method.id}>
+                          {method.name} ({method.type === 'mobile_payment' ? 'Mobile' : method.type === 'bank_transfer' ? 'Bank' : 'Card'})
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Notes (Optional)</label>
+                  <textarea
+                    value={purchaseForm.notes}
+                    onChange={(e) => setPurchaseForm({...purchaseForm, notes: e.target.value})}
+                    className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                    placeholder="Any additional notes..."
+                    rows="3"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-semibold rounded-xl py-3 text-sm transition-all duration-200 shadow-lg"
+                >
+                  Proceed to Payment
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};

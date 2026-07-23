@@ -11,6 +11,8 @@ import SalesHistory from './components/SalesHistory';
 import ManageStaff from './components/ManageStaff';
 import SiteSettings from './components/SiteSettings';
 import PricingPlans from './components/PricingPlans';
+import PlanPurchases from './components/PlanPurchases';
+import PaymentMethods from './components/PaymentMethods';
 import Settings from './components/Settings';
 import ManageShops from './components/ManageShops';
 import SystemUsers from './components/SystemUsers';
@@ -228,6 +230,8 @@ export default function App() {
         case '/total-revenue': return <TotalRevenue />;
         case '/site-settings': return <SiteSettings />;
         case '/pricing-plans': return <PricingPlans />;
+        case '/plan-purchases': return <PlanPurchases />;
+        case '/payment-methods': return <PaymentMethods />;
         case '/settings': return <Settings />;
         default: return <Dashboard />;
       }

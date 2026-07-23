@@ -552,6 +552,115 @@ class DB {
                 $pdo->exec("ALTER TABLE `sales` ADD COLUMN `points_redeemed_value` DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT 'Monetary value of redeemed points'");
             }
 
+            // Create plan_purchases table if not exists
+            try {
+                $pdo->exec("
+                    CREATE TABLE IF NOT EXISTS `plan_purchases` (
+                        `id` INT AUTO_INCREMENT,
+                        `plan_id` INT NOT NULL,
+                        `shop_id` INT NULL,
+                        `user_name` VARCHAR(100) NOT NULL,
+                        `user_email` VARCHAR(100) NOT NULL,
+                        `user_phone` VARCHAR(20) NULL,
+                        `amount_paid` DECIMAL(10,2) NOT NULL,
+                        `currency` VARCHAR(10) NOT NULL DEFAULT 'BDT',
+                        `payment_method` ENUM('cash', 'card', 'mobile_pay', 'bank_transfer', 'other') NOT NULL DEFAULT 'other',
+                        `status` ENUM('pending', 'completed', 'failed', 'cancelled') NOT NULL DEFAULT 'pending',
+                        `transaction_id` VARCHAR(100) NULL,
+                        `bank_name` VARCHAR(100) NULL,
+                        `account_number` VARCHAR(50) NULL,
+                        `card_last_four` VARCHAR(4) NULL,
+                        `payment_proof` TEXT NULL,
+                        `notes` TEXT NULL,
+                        `purchase_date` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        `expiry_date` TIMESTAMP NULL,
+                        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        PRIMARY KEY (`id`),
+                        INDEX `idx_plan_purchases_plan` (`plan_id`),
+                        INDEX `idx_plan_purchases_shop` (`shop_id`),
+                        INDEX `idx_plan_purchases_status` (`status`),
+                        INDEX `idx_plan_purchases_date` (`purchase_date`),
+                        CONSTRAINT `fk_plan_purchases_plan`
+                            FOREIGN KEY (`plan_id`)
+                            REFERENCES `pricing_plans` (`id`)
+                            ON DELETE RESTRICT
+                            ON UPDATE CASCADE,
+                        CONSTRAINT `fk_plan_purchases_shop`
+                            FOREIGN KEY (`shop_id`)
+                            REFERENCES `shops` (`id`)
+                            ON DELETE SET NULL
+                            ON UPDATE CASCADE
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ");
+            } catch (\Exception $e) {
+                error_log("Failed to create plan_purchases table: " . $e->getMessage());
+            }
+
+            // Add payment detail columns to plan_purchases table if they don't exist
+            if ($tableExists('plan_purchases')) {
+                if (!$columnExists('plan_purchases', 'bank_name')) {
+                    $pdo->exec("ALTER TABLE `plan_purchases` ADD COLUMN `bank_name` VARCHAR(100) NULL");
+                }
+                if (!$columnExists('plan_purchases', 'account_number')) {
+                    $pdo->exec("ALTER TABLE `plan_purchases` ADD COLUMN `account_number` VARCHAR(50) NULL");
+                }
+                if (!$columnExists('plan_purchases', 'card_last_four')) {
+                    $pdo->exec("ALTER TABLE `plan_purchases` ADD COLUMN `card_last_four` VARCHAR(4) NULL");
+                }
+                if (!$columnExists('plan_purchases', 'payment_proof')) {
+                    $pdo->exec("ALTER TABLE `plan_purchases` ADD COLUMN `payment_proof` TEXT NULL");
+                }
+                if (!$columnExists('plan_purchases', 'payment_method_id')) {
+                    $pdo->exec("ALTER TABLE `plan_purchases` ADD COLUMN `payment_method_id` INT NULL");
+                }
+            }
+
+            // Create payment_methods table if not exists
+            try {
+                $pdo->exec("
+                    CREATE TABLE IF NOT EXISTS `payment_methods` (
+                        `id` INT AUTO_INCREMENT,
+                        `type` ENUM('mobile_payment', 'bank_transfer', 'card') NOT NULL,
+                        `name` VARCHAR(100) NOT NULL,
+                        `phone_number` VARCHAR(20) NULL,
+                        `account_number` VARCHAR(50) NULL,
+                        `account_holder` VARCHAR(100) NULL,
+                        `branch_name` VARCHAR(100) NULL,
+                        `routing_number` VARCHAR(20) NULL,
+                        `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                        `sort_order` INT NOT NULL DEFAULT 0,
+                        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        PRIMARY KEY (`id`),
+                        INDEX `idx_payment_methods_type` (`type`),
+                        INDEX `idx_payment_methods_active` (`is_active`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ");
+            } catch (\Exception $e) {
+                error_log("Failed to create payment_methods table: " . $e->getMessage());
+            }
+
+            // Insert default Bangladeshi payment methods if table is empty
+            try {
+                $stmt = $pdo->query("SELECT COUNT(*) FROM `payment_methods`");
+                $count = $stmt->fetchColumn();
+                if ($count == 0) {
+                    $pdo->exec("
+                        INSERT INTO `payment_methods` (`type`, `name`, `phone_number`, `account_holder`, `is_active`, `sort_order`) VALUES
+                        ('mobile_payment', 'bKash', '01700000000', 'CodexaaPOS++', 1, 1),
+                        ('mobile_payment', 'Nagad', '01800000000', 'CodexaaPOS++', 1, 2),
+                        ('mobile_payment', 'Rocket', '01900000000', 'CodexaaPOS++', 1, 3),
+                        ('bank_transfer', 'Dutch-Bangla Bank (DBBL)', '1234567890', 'CodexaaPOS++', 1, 4),
+                        ('bank_transfer', 'Sonali Bank', '0987654321', 'CodexaaPOS++', 1, 5),
+                        ('bank_transfer', 'Brac Bank', '1122334455', 'CodexaaPOS++', 1, 6),
+                        ('bank_transfer', 'City Bank', '5566778899', 'CodexaaPOS++', 1, 7)
+                    ");
+                }
+            } catch (\Exception $e) {
+                error_log("Failed to insert default payment methods: " . $e->getMessage());
+            }
+
         } catch (\PDOException $e) {
             error_log("Migration error: " . $e->getMessage());
             file_put_contents(__DIR__ . '/migration_error.txt', "Migration error: " . $e->getMessage());

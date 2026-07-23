@@ -236,6 +236,450 @@ class OtherController {
     }
 
     // ==========================================
+    // PLAN PURCHASES
+    // ==========================================
+
+    public static function listPlanPurchases() {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        try {
+            $sql = 'SELECT pur.*, pl.name AS plan_name, pl.price AS plan_price, pl.period AS plan_period,
+                    s.name AS shop_name, u.name AS user_name
+                    FROM plan_purchases pur
+                    LEFT JOIN pricing_plans pl ON pur.plan_id = pl.id
+                    LEFT JOIN shops s ON pur.shop_id = s.id
+                    LEFT JOIN users u ON pur.shop_id = u.shop_id AND u.role = "shop_admin"
+                    ORDER BY pur.purchase_date DESC';
+            
+            $stmt = DB::query($sql);
+            $purchases = $stmt->fetchAll();
+
+            foreach ($purchases as &$purchase) {
+                $purchase['id'] = (int)$purchase['id'];
+                $purchase['plan_id'] = (int)$purchase['plan_id'];
+                $purchase['shop_id'] = $purchase['shop_id'] !== null ? (int)$purchase['shop_id'] : null;
+                $purchase['amount_paid'] = (float)$purchase['amount_paid'];
+            }
+
+            header('Content-Type: application/json');
+            echo json_encode($purchases);
+
+        } catch (\Exception $e) {
+            error_log('Fetch plan purchases error: ' . $e->getMessage());
+            Auth::jsonError('Server error retrieving plan purchases.', 500);
+        }
+    }
+
+    public static function createPlanPurchase($requestData) {
+        // Public endpoint - no authentication required for purchasing plans
+        $planId = $requestData['plan_id'] ?? null;
+        $userName = $requestData['user_name'] ?? null;
+        $userEmail = $requestData['user_email'] ?? null;
+        $userPhone = $requestData['user_phone'] ?? null;
+        $paymentMethod = $requestData['payment_method'] ?? 'other';
+        $paymentMethodId = $requestData['payment_method_id'] ?? null;
+        $notes = $requestData['notes'] ?? null;
+        $shopId = $requestData['shop_id'] ?? null;
+        $userTransactionId = $requestData['transaction_id'] ?? null;
+        $bankName = $requestData['bank_name'] ?? null;
+        $accountNumber = $requestData['account_number'] ?? null;
+        $cardLastFour = $requestData['card_last_four'] ?? null;
+        $paymentProof = $requestData['payment_proof'] ?? null;
+
+        if (empty($planId) || empty($userName) || empty($userEmail)) {
+            header('Content-Type: application/json');
+            http_response_code(400);
+            echo json_encode(['error' => 'plan_id, user_name, and user_email are required.']);
+            return;
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Get plan details
+            $stmt = DB::query('SELECT * FROM pricing_plans WHERE id = ?', [(int)$planId]);
+            $plan = $stmt->fetch();
+
+            if (!$plan) {
+                DB::rollBack();
+                header('Content-Type: application/json');
+                http_response_code(404);
+                echo json_encode(['error' => 'Pricing plan not found.']);
+                return;
+            }
+
+            // Calculate expiry date based on plan period
+            $expiryDate = null;
+            if ($plan['period'] === 'month') {
+                $expiryDate = date('Y-m-d H:i:s', strtotime('+1 month'));
+            } elseif ($plan['period'] === 'year') {
+                $expiryDate = date('Y-m-d H:i:s', strtotime('+1 year'));
+            }
+
+            // Use user-provided transaction ID or generate one
+            $transactionId = $userTransactionId ?: 'TXN-' . strtoupper(uniqid());
+
+            // Insert purchase record
+            DB::query(
+                'INSERT INTO plan_purchases (plan_id, shop_id, user_name, user_email, user_phone, amount_paid, currency, payment_method, payment_method_id, status, transaction_id, bank_name, account_number, card_last_four, payment_proof, notes, expiry_date)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [
+                    (int)$planId,
+                    $shopId ? (int)$shopId : null,
+                    $userName,
+                    $userEmail,
+                    $userPhone,
+                    (float)$plan['price'],
+                    'BDT',
+                    $paymentMethod,
+                    $paymentMethodId ? (int)$paymentMethodId : null,
+                    'pending',
+                    $transactionId,
+                    $bankName,
+                    $accountNumber,
+                    $cardLastFour,
+                    $paymentProof,
+                    $notes,
+                    $expiryDate
+                ]
+            );
+
+            $purchaseId = DB::lastInsertId();
+            DB::commit();
+
+            header('Content-Type: application/json');
+            http_response_code(201);
+            echo json_encode([
+                'message' => 'Plan purchase submitted successfully. Your purchase is pending review.',
+                'purchase_id' => (int)$purchaseId,
+                'transaction_id' => $transactionId,
+                'expiry_date' => $expiryDate
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            error_log('Create plan purchase error: ' . $e->getMessage());
+            header('Content-Type: application/json');
+            http_response_code(500);
+            echo json_encode(['error' => 'Server error processing plan purchase.']);
+        }
+    }
+
+    public static function updatePlanPurchase($id, $requestData) {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        $purchaseId = (int)$id;
+        $status = $requestData['status'] ?? null;
+        $notes = $requestData['notes'] ?? null;
+
+        if (empty($status)) {
+            Auth::jsonError('status is required.', 400);
+        }
+
+        try {
+            $updateFields = [];
+            $params = [];
+
+            if ($status !== null) {
+                $updateFields[] = 'status = ?';
+                $params[] = $status;
+            }
+            if ($notes !== null) {
+                $updateFields[] = 'notes = ?';
+                $params[] = $notes;
+            }
+
+            $params[] = $purchaseId;
+
+            DB::query('UPDATE plan_purchases SET ' . implode(', ', $updateFields) . ' WHERE id = ?', $params);
+
+            header('Content-Type: application/json');
+            echo json_encode(['message' => 'Plan purchase updated successfully.']);
+
+        } catch (\Exception $e) {
+            error_log('Update plan purchase error: ' . $e->getMessage());
+            Auth::jsonError('Server error updating plan purchase.', 500);
+        }
+    }
+
+    public static function deletePlanPurchase($id) {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        $purchaseId = (int)$id;
+
+        try {
+            DB::query('DELETE FROM plan_purchases WHERE id = ?', [$purchaseId]);
+
+            header('Content-Type: application/json');
+            echo json_encode(['message' => 'Plan purchase deleted successfully.']);
+
+        } catch (\Exception $e) {
+            error_log('Delete plan purchase error: ' . $e->getMessage());
+            Auth::jsonError('Server error deleting plan purchase.', 500);
+        }
+    }
+
+    // ==========================================
+    // PAYMENT METHODS
+    // ==========================================
+
+    public static function listPaymentMethods() {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        try {
+            // Check if table exists, if not create it
+            $pdo = DB::getConnection();
+            $stmt = $pdo->query("SHOW TABLES LIKE 'payment_methods'");
+            if ($stmt->rowCount() == 0) {
+                // Table doesn't exist, create it
+                $pdo->exec("
+                    CREATE TABLE `payment_methods` (
+                        `id` INT AUTO_INCREMENT,
+                        `type` ENUM('mobile_payment', 'bank_transfer', 'card') NOT NULL,
+                        `name` VARCHAR(100) NOT NULL,
+                        `phone_number` VARCHAR(20) NULL,
+                        `account_number` VARCHAR(50) NULL,
+                        `account_holder` VARCHAR(100) NULL,
+                        `branch_name` VARCHAR(100) NULL,
+                        `routing_number` VARCHAR(20) NULL,
+                        `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                        `sort_order` INT NOT NULL DEFAULT 0,
+                        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        PRIMARY KEY (`id`),
+                        INDEX `idx_payment_methods_type` (`type`),
+                        INDEX `idx_payment_methods_active` (`is_active`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ");
+                
+                // Insert default payment methods
+                $pdo->exec("
+                    INSERT INTO `payment_methods` (`type`, `name`, `phone_number`, `account_holder`, `is_active`, `sort_order`) VALUES
+                    ('mobile_payment', 'bKash', '01700000000', 'CodexaaPOS++', 1, 1),
+                    ('mobile_payment', 'Nagad', '01800000000', 'CodexaaPOS++', 1, 2),
+                    ('mobile_payment', 'Rocket', '01900000000', 'CodexaaPOS++', 1, 3),
+                    ('bank_transfer', 'Dutch-Bangla Bank (DBBL)', '1234567890', 'CodexaaPOS++', 1, 4),
+                    ('bank_transfer', 'Sonali Bank', '0987654321', 'CodexaaPOS++', 1, 5),
+                    ('bank_transfer', 'Brac Bank', '1122334455', 'CodexaaPOS++', 1, 6),
+                    ('bank_transfer', 'City Bank', '5566778899', 'CodexaaPOS++', 1, 7)
+                ");
+            }
+
+            $sql = 'SELECT * FROM payment_methods ORDER BY sort_order ASC, id ASC';
+            $stmt = DB::query($sql);
+            $methods = $stmt->fetchAll();
+
+            foreach ($methods as &$method) {
+                $method['id'] = (int)$method['id'];
+                $method['is_active'] = (bool)$method['is_active'];
+                $method['sort_order'] = (int)$method['sort_order'];
+            }
+
+            header('Content-Type: application/json');
+            echo json_encode($methods);
+
+        } catch (\Exception $e) {
+            error_log('Fetch payment methods error: ' . $e->getMessage());
+            Auth::jsonError('Server error retrieving payment methods: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public static function createPaymentMethod($requestData) {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        // Ensure table exists
+        try {
+            $pdo = DB::getConnection();
+            $stmt = $pdo->query("SHOW TABLES LIKE 'payment_methods'");
+            if ($stmt->rowCount() == 0) {
+                $pdo->exec("
+                    CREATE TABLE `payment_methods` (
+                        `id` INT AUTO_INCREMENT,
+                        `type` ENUM('mobile_payment', 'bank_transfer', 'card') NOT NULL,
+                        `name` VARCHAR(100) NOT NULL,
+                        `phone_number` VARCHAR(20) NULL,
+                        `account_number` VARCHAR(50) NULL,
+                        `account_holder` VARCHAR(100) NULL,
+                        `branch_name` VARCHAR(100) NULL,
+                        `routing_number` VARCHAR(20) NULL,
+                        `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                        `sort_order` INT NOT NULL DEFAULT 0,
+                        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        PRIMARY KEY (`id`),
+                        INDEX `idx_payment_methods_type` (`type`),
+                        INDEX `idx_payment_methods_active` (`is_active`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ");
+
+                // Insert default payment methods
+         /*                            ('bank_transfer', 'Dutch-Bangla Bank (DBBL)', '1234567890', 'CodexaaPOS++', 1, 4),
+                    ('bank_transfer', 'Sonali Bank', '0987654321', 'CodexaaPOS++', 1, 5),
+                    ('bank_transfer', 'Brac Bank', '1122334455', 'CodexaaPOS++', 1, 6),
+                    ('bank_transfer', 'City Bank', '5566778899', 'CodexaaPOS++', 1, 7) 
+ */
+                $pdo->exec("
+                    INSERT INTO `payment_methods` (`type`, `name`, `phone_number`, `account_holder`, `is_active`, `sort_order`) VALUES
+                    ('mobile_payment', 'bKash', '01854718767', 'CodexaaPOS++', 1, 1),
+                    ('mobile_payment', 'Nagad', '01854718767', 'CodexaaPOS++', 1, 2),
+                    ('mobile_payment', 'Rocket', '01572491828', 'CodexaaPOS++', 1, 3)
+                    
+                ");
+
+            }
+        } catch (\Exception $e) {
+            error_log('Table creation check error: ' . $e->getMessage());
+        }
+
+        $type = $requestData['type'] ?? null;
+        $name = $requestData['name'] ?? null;
+        $phoneNumber = $requestData['phone_number'] ?? null;
+        $accountNumber = $requestData['account_number'] ?? null;
+        $accountHolder = $requestData['account_holder'] ?? null;
+        $branchName = $requestData['branch_name'] ?? null;
+        $routingNumber = $requestData['routing_number'] ?? null;
+        $isActive = isset($requestData['is_active']) ? ($requestData['is_active'] ? 1 : 0) : 1;
+        $sortOrder = $requestData['sort_order'] ?? 0;
+
+        if (empty($type) || empty($name)) {
+            header('Content-Type: application/json');
+            http_response_code(400);
+            echo json_encode(['error' => 'type and name are required.']);
+            return;
+        }
+
+        try {
+            DB::query(
+                'INSERT INTO payment_methods (type, name, phone_number, account_number, account_holder, branch_name, routing_number, is_active, sort_order)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [
+                    $type,
+                    $name,
+                    $phoneNumber,
+                    $accountNumber,
+                    $accountHolder,
+                    $branchName,
+                    $routingNumber,
+                    $isActive,
+                    (int)$sortOrder
+                ]
+            );
+
+            $methodId = DB::lastInsertId();
+
+            header('Content-Type: application/json');
+            http_response_code(201);
+            echo json_encode([
+                'message' => 'Payment method created successfully.',
+                'id' => (int)$methodId
+            ]);
+
+        } catch (\Exception $e) {
+            error_log('Create payment method error: ' . $e->getMessage());
+            Auth::jsonError('Server error creating payment method: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public static function updatePaymentMethod($id, $requestData) {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        $methodId = (int)$id;
+
+        try {
+            $stmt = DB::query('SELECT * FROM payment_methods WHERE id = ?', [$methodId]);
+            $method = $stmt->fetch();
+
+            if (!$method) {
+                header('Content-Type: application/json');
+                http_response_code(404);
+                echo json_encode(['error' => 'Payment method not found.']);
+                return;
+            }
+
+            $type = $requestData['type'] ?? $method['type'];
+            $name = $requestData['name'] ?? $method['name'];
+            $phoneNumber = $requestData['phone_number'] ?? $method['phone_number'];
+            $accountNumber = $requestData['account_number'] ?? $method['account_number'];
+            $accountHolder = $requestData['account_holder'] ?? $method['account_holder'];
+            $branchName = $requestData['branch_name'] ?? $method['branch_name'];
+            $routingNumber = $requestData['routing_number'] ?? $method['routing_number'];
+            $isActive = $requestData['is_active'] ?? $method['is_active'];
+            $sortOrder = $requestData['sort_order'] ?? $method['sort_order'];
+
+            DB::query(
+                'UPDATE payment_methods SET type = ?, name = ?, phone_number = ?, account_number = ?, account_holder = ?, branch_name = ?, routing_number = ?, is_active = ?, sort_order = ? WHERE id = ?',
+                [
+                    $type,
+                    $name,
+                    $phoneNumber,
+                    $accountNumber,
+                    $accountHolder,
+                    $branchName,
+                    $routingNumber,
+                    (int)$isActive,
+                    (int)$sortOrder,
+                    $methodId
+                ]
+            );
+
+            header('Content-Type: application/json');
+            echo json_encode(['message' => 'Payment method updated successfully.']);
+
+        } catch (\Exception $e) {
+            error_log('Update payment method error: ' . $e->getMessage());
+            Auth::jsonError('Server error updating payment method.', 500);
+        }
+    }
+
+    public static function deletePaymentMethod($id) {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        $methodId = (int)$id;
+
+        try {
+            DB::query('DELETE FROM payment_methods WHERE id = ?', [$methodId]);
+
+            header('Content-Type: application/json');
+            echo json_encode(['message' => 'Payment method deleted successfully.']);
+
+        } catch (\Exception $e) {
+            error_log('Delete payment method error: ' . $e->getMessage());
+            Auth::jsonError('Server error deleting payment method.', 500);
+        }
+    }
+
+    // Public endpoint to get active payment methods for purchase modal
+    public static function getActivePaymentMethods() {
+        try {
+            $sql = 'SELECT * FROM payment_methods WHERE is_active = 1 ORDER BY sort_order ASC, id ASC';
+            $stmt = DB::query($sql);
+            $methods = $stmt->fetchAll();
+
+            foreach ($methods as &$method) {
+                $method['id'] = (int)$method['id'];
+                $method['is_active'] = (bool)$method['is_active'];
+                $method['sort_order'] = (int)$method['sort_order'];
+            }
+
+            header('Content-Type: application/json');
+            echo json_encode($methods);
+
+        } catch (\Exception $e) {
+            error_log('Fetch active payment methods error: ' . $e->getMessage());
+            header('Content-Type: application/json');
+            http_response_code(500);
+            echo json_encode(['error' => 'Server error retrieving payment methods.']);
+        }
+    }
+
+    // ==========================================
     // OTHER COSTS
     // ==========================================
     

@@ -290,6 +290,10 @@ $routes = [
         '/^settings\/site$/' => function() { OtherController::getSiteSettings(); },
         // Pricing Plans
         '/^pricing-plans$/' => function() { OtherController::listPricingPlans(); },
+        // Plan Purchases
+        '/^plan-purchases$/' => function() { OtherController::listPlanPurchases(); },
+        // Payment Methods (public endpoint for purchase modal)
+        '/^payment-methods\/active$/' => function() { OtherController::getActivePaymentMethods(); },
     ],
     'POST' => [
         // Auth
@@ -335,6 +339,10 @@ $routes = [
         '/^users\/staff$/' => function($args, $data) { OtherController::createStaff($data); },
         // Pricing Plans
         '/^pricing-plans$/' => function($args, $data) { OtherController::createPricingPlan($data); },
+        // Plan Purchases
+        '/^plan-purchases$/' => function($args, $data) { OtherController::createPlanPurchase($data); },
+        // Payment Methods
+        '/^payment-methods$/' => function($args, $data) { OtherController::createPaymentMethod($data); },
     ],
     'PUT' => [
         // Auth
@@ -372,6 +380,11 @@ $routes = [
         '/^users\/staff\/(\d+)$/' => function($args, $data) { OtherController::updateStaff($args[0], $data); },
         // Pricing Plans
         '/^pricing-plans\/(\d+)$/' => function($args, $data) { OtherController::updatePricingPlan($args[0], $data); },
+        // Plan Purchases
+        '/^plan-purchases\/(\d+)$/' => function($args, $data) { OtherController::updatePlanPurchase($args[0], $data); },
+        // Payment Methods
+        '/^payment-methods$/' => function($args, $data) { OtherController::listPaymentMethods(); },
+        '/^payment-methods\/(\d+)$/' => function($args, $data) { OtherController::updatePaymentMethod($args[0], $data); },
         // Site Settings
         '/^settings\/site$/' => function($args, $data) { OtherController::updateSiteSettings($data); },
     ],
@@ -409,6 +422,10 @@ $routes = [
         '/^users\/staff\/(\d+)$/' => function($args) { OtherController::deleteStaff($args[0]); },
         // Pricing Plans
         '/^pricing-plans\/(\d+)$/' => function($args) { OtherController::deletePricingPlan($args[0]); },
+        // Plan Purchases
+        '/^plan-purchases\/(\d+)$/' => function($args) { OtherController::deletePlanPurchase($args[0]); },
+        // Payment Methods
+        '/^payment-methods\/(\d+)$/' => function($args) { OtherController::deletePaymentMethod($args[0]); },
     ]
 ];
 
