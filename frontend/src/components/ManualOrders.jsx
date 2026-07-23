@@ -1557,12 +1557,12 @@ export default function ManualOrders() {
                             </div>
                           )}
                         </div>
-                        {item.product_id && item.cost_price !== '' && item.cost_price !== undefined && (
-                          <div className="mt-1.5 flex items-center gap-1.5">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cost Price:</span>
-                            <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">৳{parseFloat(item.cost_price).toFixed(2)}</span>
-                          </div>
-                        )}
+                          {item.product_id && item.cost_price !== '' && item.cost_price !== undefined && (
+                            <div className="mt-1.5 flex items-center gap-1.5">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cost Price:</span>
+                              <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">৳{parseFloat(item.cost_price).toFixed(2)}</span>
+                            </div>
+                          )}
                       </div>
 
                       <div className="w-full md:w-24">
@@ -1642,9 +1642,9 @@ export default function ManualOrders() {
                       min="0"
                       max="100"
                       step="0.1"
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        discountPercent: Math.min(100, Math.max(0, parseFloat(e.target.value) || 0))
+                      onChange={(e) => setFormData(prev => ({ 
+                        ...prev, 
+                        discountPercent: Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)) 
                       }))}
                       disabled={parseFloat(formData.discountAmount || 0) > 0}
                       placeholder="E.g. 10"
@@ -1659,9 +1659,9 @@ export default function ManualOrders() {
                       value={formData.discountAmount || ''}
                       min="0"
                       step="1"
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        discountAmount: Math.max(0, parseFloat(e.target.value) || 0)
+                      onChange={(e) => setFormData(prev => ({ 
+                        ...prev, 
+                        discountAmount: Math.max(0, parseFloat(e.target.value) || 0) 
                       }))}
                       disabled={parseFloat(formData.discountPercent || 0) > 0}
                       placeholder="E.g. 50"
@@ -1707,16 +1707,18 @@ export default function ManualOrders() {
                 >
                   Save as Draft (Pending)
                 </button>
-                <button
-                  type="button"
-                  onClick={(e) => handleFormSubmit(e, true)}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition-colors shadow-md flex items-center justify-center space-x-1.5"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span>Confirm & Generate Invoice</span>
-                </button>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleFormSubmit(e, true)}
+                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition-colors shadow-md flex items-center justify-center space-x-1.5"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Confirm & Generate Invoice</span>
+                  </button>
+                )}
               </div>
             </form>
           </div>
