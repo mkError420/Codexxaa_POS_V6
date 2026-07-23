@@ -463,14 +463,55 @@ class DB {
                 error_log("Failed to create site_settings table: " . $e->getMessage());
             }
 
-            // Insert default site settings
+            // Create pricing_plans table if not exists
             try {
                 $pdo->exec("
-                    INSERT INTO `site_settings` (`setting_key`, `setting_value`) VALUES
-                    ('site_name', 'CodexaaPOS++'),
-                    ('site_description', 'Modern Point of Sale For Your Business')
-                    ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`);
+                    CREATE TABLE IF NOT EXISTS `pricing_plans` (
+                        `id` INT AUTO_INCREMENT PRIMARY KEY,
+                        `name` VARCHAR(100) NOT NULL,
+                        `description` TEXT,
+                        `price` DECIMAL(10, 2) NOT NULL,
+                        `period` VARCHAR(20) DEFAULT 'month',
+                        `features` JSON,
+                        `is_popular` TINYINT(1) DEFAULT 0,
+                        `button_text` VARCHAR(50) DEFAULT 'Get Started',
+                        `sort_order` INT DEFAULT 0,
+                        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
                 ");
+            } catch (\Exception $e) {
+                error_log("Failed to create pricing_plans table: " . $e->getMessage());
+            }
+
+            // Insert default pricing plans only if table is empty
+            try {
+                $stmt = $pdo->query("SELECT COUNT(*) FROM `pricing_plans`");
+                $count = $stmt->fetchColumn();
+                if ($count == 0) {
+                    $pdo->exec("
+                        INSERT INTO `pricing_plans` (`name`, `description`, `price`, `period`, `features`, `is_popular`, `button_text`, `sort_order`) VALUES
+                        ('Starter', 'Perfect for small businesses', 29.00, 'month', '[\"1 Shop Location\", \"Up to 500 Products\", \"2 Staff Accounts\", \"Basic Analytics\", \"Email Support\"]', 0, 'Get Started', 1),
+                        ('Professional', 'For growing businesses', 79.00, 'month', '[\"Up to 5 Shop Locations\", \"Unlimited Products\", \"10 Staff Accounts\", \"Advanced Analytics\", \"Priority Support\", \"API Access\"]', 1, 'Get Started', 2),
+                        ('Enterprise', 'For large organizations', 199.00, 'month', '[\"Unlimited Shop Locations\", \"Unlimited Products\", \"Unlimited Staff Accounts\", \"Custom Analytics\", \"24/7 Dedicated Support\", \"White-label Solution\", \"Custom Integrations\"]', 0, 'Contact Sales', 3)
+                    ");
+                }
+            } catch (\Exception $e) {
+                error_log("Failed to insert default pricing plans: " . $e->getMessage());
+            }
+
+            // Insert default site settings only if they don't exist
+            try {
+                $stmt = $pdo->query("SELECT COUNT(*) FROM `site_settings`");
+                $count = $stmt->fetchColumn();
+                if ($count == 0) {
+                    $pdo->exec("
+                        INSERT INTO `site_settings` (`setting_key`, `setting_value`) VALUES
+                        ('site_name', 'CodexaaPos++'),
+                        ('site_description', 'Modern Point of Sale For Your Business'),
+                        ('hero_content', 'Streamline your retail operations with our powerful, cloud-based POS solution. Manage inventory, sales, customers, and more from anywhere.')
+                    ");
+                }
             } catch (\Exception $e) {
                 error_log("Failed to insert default site settings: " . $e->getMessage());
             }

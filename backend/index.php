@@ -288,6 +288,8 @@ $routes = [
         '/^users\/staff$/' => function() { OtherController::listStaff(); },
         // Site Settings
         '/^settings\/site$/' => function() { OtherController::getSiteSettings(); },
+        // Pricing Plans
+        '/^pricing-plans$/' => function() { OtherController::listPricingPlans(); },
     ],
     'POST' => [
         // Auth
@@ -331,6 +333,8 @@ $routes = [
         // Users
         '/^users$/' => function($args, $data) { OtherController::createUser($data); },
         '/^users\/staff$/' => function($args, $data) { OtherController::createStaff($data); },
+        // Pricing Plans
+        '/^pricing-plans$/' => function($args, $data) { OtherController::createPricingPlan($data); },
     ],
     'PUT' => [
         // Auth
@@ -366,6 +370,8 @@ $routes = [
         // Users
         '/^users\/(\d+)$/' => function($args, $data) { OtherController::updateUser($args[0], $data); },
         '/^users\/staff\/(\d+)$/' => function($args, $data) { OtherController::updateStaff($args[0], $data); },
+        // Pricing Plans
+        '/^pricing-plans\/(\d+)$/' => function($args, $data) { OtherController::updatePricingPlan($args[0], $data); },
         // Site Settings
         '/^settings\/site$/' => function($args, $data) { OtherController::updateSiteSettings($data); },
     ],
@@ -401,6 +407,8 @@ $routes = [
         // Users
         '/^users\/(\d+)$/' => function($args) { OtherController::deleteUser($args[0]); },
         '/^users\/staff\/(\d+)$/' => function($args) { OtherController::deleteStaff($args[0]); },
+        // Pricing Plans
+        '/^pricing-plans\/(\d+)$/' => function($args) { OtherController::deletePricingPlan($args[0]); },
     ]
 ];
 

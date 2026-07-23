@@ -9,9 +9,13 @@ export default function Home({ onLoginSuccess }) {
   const [error, setError] = useState('');
   const [activeSection, setActiveSection] = useState(null);
   const [siteSettings, setSiteSettings] = useState({
-    site_name: 'CodexaaPOS++',
-    site_description: 'Modern Point of Sale For Your Business'
+    site_name: 'CodexaaPos++',
+    site_description: 'Modern Point of Sale For Your Business',
+    hero_content: 'Streamline your retail operations with our powerful, cloud-based POS solution. Manage inventory, sales, customers, and more from anywhere.',
+    site_logo: '',
+    active_shop_count: 0
   });
+  const [pricingPlans, setPricingPlans] = useState([]);
 
   const scrollToSection = (sectionId) => {
     setActiveSection(sectionId);
@@ -31,19 +35,43 @@ export default function Home({ onLoginSuccess }) {
           const data = await response.json();
           console.log('Site settings data received:', data);
           setSiteSettings({
-            site_name: data.site_name || 'CodexaaPOS++',
-            site_description: data.site_description || 'Modern Point of Sale For Your Business'
+            site_name: data.site_name || 'CodexaaPos++',
+            site_description: data.site_description || 'Modern Point of Sale For Your Business',
+            hero_content: data.hero_content || 'Streamline your retail operations with our powerful, cloud-based POS solution. Manage inventory, sales, customers, and more from anywhere.',
+            site_logo: data.site_logo || '',
+            active_shop_count: data.active_shop_count || 0
           });
         } else {
           console.error('Site settings response not OK:', response.status);
-          setSiteSettings({ site_name: 'CodexaaPOS++', site_description: 'Modern Point of Sale For Your Business' });
+          setSiteSettings({ site_name: 'CodexaaPos++', site_description: 'Modern Point of Sale For Your Business', hero_content: 'Streamline your retail operations with our powerful, cloud-based POS solution. Manage inventory, sales, customers, and more from anywhere.', site_logo: '', active_shop_count: 0 });
         }
       } catch (err) {
         console.error("Could not fetch site settings, using defaults.", err);
-        setSiteSettings({ site_name: 'CodexaaPOS++', site_description: 'Modern Point of Sale For Your Business' });
+        setSiteSettings({ site_name: 'CodexaaPos++', site_description: 'Modern Point of Sale For Your Business', hero_content: 'Streamline your retail operations with our powerful, cloud-based POS solution. Manage inventory, sales, customers, and more from anywhere.', site_logo: '', active_shop_count: 0 });
       }
     };
+
+    const fetchPricingPlans = async () => {
+      try {
+        console.log('Fetching pricing plans from:', `${API_BASE_URL}/pricing-plans`);
+        const response = await fetch(`${API_BASE_URL}/pricing-plans`);
+        console.log('Pricing plans response status:', response.status);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Pricing plans data received:', data);
+          setPricingPlans(data);
+        } else {
+          console.error('Pricing plans response not OK:', response.status);
+          setPricingPlans([]);
+        }
+      } catch (err) {
+        console.error("Could not fetch pricing plans, using empty array.", err);
+        setPricingPlans([]);
+      }
+    };
+
     fetchSiteSettings();
+    fetchPricingPlans();
   }, []);
 
   const handleSubmit = async (e) => {
@@ -89,11 +117,19 @@ export default function Home({ onLoginSuccess }) {
       {/* Navigation */}
       <nav className="relative z-10 flex items-center justify-between px-6 py-4 lg:px-12">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-slate-600 shadow-xl shadow-indigo-600/40 flex items-center justify-center">
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
-          </div>
+          {siteSettings.site_logo ? (
+            <img
+              src={siteSettings.site_logo}
+              alt="Site Logo"
+              className="w-10 h-10 rounded-xl object-contain bg-slate-600 shadow-xl shadow-indigo-600/40"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-slate-600 shadow-xl shadow-indigo-600/40 flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+            </div>
+          )}
           <span className="text-white font-bold text-xl tracking-tight">{siteSettings.site_name}</span>
         </div>
       </nav>
@@ -113,7 +149,7 @@ export default function Home({ onLoginSuccess }) {
                 {siteSettings.site_description}
               </h1>
               <p className="text-slate-400 text-lg max-w-lg leading-relaxed">
-                Streamline your retail operations with our powerful, cloud-based POS solution. Manage inventory, sales, customers, and more from anywhere.
+                {siteSettings.hero_content}
               </p>
             </div>
 
@@ -137,7 +173,7 @@ export default function Home({ onLoginSuccess }) {
             {/* Stats */}
             <div className="flex gap-8 pt-8 border-t border-slate-800">
               <div>
-                <div className="text-3xl font-bold text-white">500+</div>
+                <div className="text-3xl font-bold text-white">{siteSettings.active_shop_count}+</div>
                 <div className="text-slate-500 text-sm">Active Shops</div>
               </div>
               <div>
@@ -156,11 +192,21 @@ export default function Home({ onLoginSuccess }) {
             <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-700/60 rounded-2xl p-8 shadow-2xl">
               {/* Brand */}
               <div className="text-center mb-6">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-600 shadow-2xl shadow-indigo-600/40 mb-3">
-                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
-                </div>
+                {siteSettings.site_logo ? (
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-600 shadow-2xl shadow-indigo-600/40 mb-3">
+                    <img
+                      src={siteSettings.site_logo}
+                      alt="Site Logo"
+                      className="w-10 h-10 rounded-xl object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-600 shadow-2xl shadow-indigo-600/40 mb-3">
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                )}
                 <h2 className="text-2xl font-bold text-white tracking-tight">Sign In</h2>
                 <p className="text-slate-400 mt-1 text-sm">Access your dashboard</p>
               </div>
@@ -376,172 +422,41 @@ export default function Home({ onLoginSuccess }) {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {/* Starter Plan */}
-            <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 hover:border-indigo-500/50 transition-all duration-300">
-              <div className="mb-6">
-                <h3 className="text-2xl font-bold text-white mb-2">Starter</h3>
-                <p className="text-slate-400 text-sm">Perfect for small businesses</p>
+            {pricingPlans.map((plan) => (
+              <div key={plan.id} className={`${plan.is_popular ? 'bg-gradient-to-b from-indigo-900/50 to-violet-900/50 backdrop-blur-xl border-2 border-indigo-500 rounded-3xl p-8 relative transform scale-105 shadow-2xl shadow-indigo-600/30' : 'bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 hover:border-indigo-500/50 transition-all duration-300'}`}>
+                {plan.is_popular && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-xs font-bold px-4 py-1 rounded-full">
+                    MOST POPULAR
+                  </div>
+                )}
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
+                  <p className="text-slate-400 text-sm">{plan.description}</p>
+                </div>
+                <div className="mb-6">
+                  <span className="text-4xl font-bold text-white">BDT {plan.price}</span>
+                  <span className="text-slate-400 text-sm">/{plan.period}</span>
+                </div>
+                <ul className="space-y-3 mb-8">
+                  {plan.features.map((feature, index) => (
+                    <li key={index} className="flex items-center gap-3 text-slate-300 text-sm">
+                      <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <button className="w-full py-3 ${plan.is_popular ? 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700' : 'bg-slate-700 hover:bg-slate-600'} text-white font-semibold rounded-xl transition-all duration-200 shadow-lg">
+                  {plan.button_text}
+                </button>
               </div>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-white">$29</span>
-                <span className="text-slate-400 text-sm">/month</span>
-              </div>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center gap-3 text-slate-300 text-sm">
-                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  1 Shop Location
-                </li>
-                <li className="flex items-center gap-3 text-slate-300 text-sm">
-                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Up to 500 Products
-                </li>
-                <li className="flex items-center gap-3 text-slate-300 text-sm">
-                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  2 Staff Accounts
-                </li>
-                <li className="flex items-center gap-3 text-slate-300 text-sm">
-                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Basic Analytics
-                </li>
-                <li className="flex items-center gap-3 text-slate-300 text-sm">
-                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Email Support
-                </li>
-              </ul>
-              <button className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-xl transition-all duration-200">
-                Get Started
-              </button>
-            </div>
-
-            {/* Professional Plan */}
-            <div className="bg-gradient-to-b from-indigo-900/50 to-violet-900/50 backdrop-blur-xl border-2 border-indigo-500 rounded-3xl p-8 relative transform scale-105 shadow-2xl shadow-indigo-600/30">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-xs font-bold px-4 py-1 rounded-full">
-                MOST POPULAR
-              </div>
-              <div className="mb-6">
-                <h3 className="text-2xl font-bold text-white mb-2">Professional</h3>
-                <p className="text-slate-400 text-sm">For growing businesses</p>
-              </div>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-white">$79</span>
-                <span className="text-slate-400 text-sm">/month</span>
-              </div>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center gap-3 text-slate-300 text-sm">
-                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Up to 5 Shop Locations
-                </li>
-                <li className="flex items-center gap-3 text-slate-300 text-sm">
-                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Unlimited Products
-                </li>
-                <li className="flex items-center gap-3 text-slate-300 text-sm">
-                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  10 Staff Accounts
-                </li>
-                <li className="flex items-center gap-3 text-slate-300 text-sm">
-                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Advanced Analytics
-                </li>
-                <li className="flex items-center gap-3 text-slate-300 text-sm">
-                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Priority Support
-                </li>
-                <li className="flex items-center gap-3 text-slate-300 text-sm">
-                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  API Access
-                </li>
-              </ul>
-              <button className="w-full py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg">
-                Get Started
-              </button>
-            </div>
-
-            {/* Enterprise Plan */}
-            <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 hover:border-indigo-500/50 transition-all duration-300">
-              <div className="mb-6">
-                <h3 className="text-2xl font-bold text-white mb-2">Enterprise</h3>
-                <p className="text-slate-400 text-sm">For large organizations</p>
-              </div>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-white">$199</span>
-                <span className="text-slate-400 text-sm">/month</span>
-              </div>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center gap-3 text-slate-300 text-sm">
-                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Unlimited Shop Locations
-                </li>
-                <li className="flex items-center gap-3 text-slate-300 text-sm">
-                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Unlimited Products
-                </li>
-                <li className="flex items-center gap-3 text-slate-300 text-sm">
-                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Unlimited Staff Accounts
-                </li>
-                <li className="flex items-center gap-3 text-slate-300 text-sm">
-                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Custom Analytics
-                </li>
-                <li className="flex items-center gap-3 text-slate-300 text-sm">
-                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  24/7 Dedicated Support
-                </li>
-                <li className="flex items-center gap-3 text-slate-300 text-sm">
-                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  White-label Solution
-                </li>
-                <li className="flex items-center gap-3 text-slate-300 text-sm">
-                  <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Custom Integrations
-                </li>
-              </ul>
-              <button className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-xl transition-all duration-200">
-                Contact Sales
-              </button>
-            </div>
+            ))}
           </div>
 
           <div className="text-center mt-12">
-            <p className="text-slate-400 text-sm">
-              All plans include a 14-day free trial. No credit card required.
+            <p className="text-slate-400 text-md">
+              All plans include a 14-day free trial.
             </p>
           </div>
         </div>
@@ -615,8 +530,8 @@ export default function Home({ onLoginSuccess }) {
               <h3 className="text-xl font-bold text-white mb-3">Contact Us</h3>
               <p className="text-slate-400 text-sm leading-relaxed">For technical support, billing inquiries, or general questions, please reach out to our support team.</p>
               <div className="mt-4 space-y-2">
-                <p className="text-slate-300 text-sm"><span className="font-semibold">Email:</span> support@codexaapos.com</p>
-                <p className="text-slate-300 text-sm"><span className="font-semibold">Phone:</span> +1 (555) 123-4567</p>
+                <p className="text-slate-300 text-sm"><span className="font-semibold">Email:</span> mk.rabbani.cse@gmail.com</p>
+                <p className="text-slate-300 text-sm"><span className="font-semibold">Phone:</span> +880 1854-718767</p>
               </div>
             </div>
             <div>

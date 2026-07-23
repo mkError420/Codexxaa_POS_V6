@@ -19,9 +19,16 @@ class OtherController {
             $stmt = DB::query('SELECT setting_key, setting_value FROM site_settings');
             $settingsRaw = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
             
+            // Get active shop count
+            $shopStmt = DB::query("SELECT COUNT(*) FROM shops WHERE status = 'active'");
+            $activeShopCount = $shopStmt->fetchColumn();
+            
             $settings = [
-                'site_name' => $settingsRaw['site_name'] ?? 'CodexaaPOS++',
-                'site_description' => $settingsRaw['site_description'] ?? 'Modern Point of Sale For Your Business'
+                'site_name' => $settingsRaw['site_name'] ?? 'CodexaaPos++',
+                'site_description' => $settingsRaw['site_description'] ?? 'Modern Point of Sale For Your Business',
+                'hero_content' => $settingsRaw['hero_content'] ?? 'Streamline your retail operations with our powerful, cloud-based POS solution. Manage inventory, sales, customers, and more from anywhere.',
+                'site_logo' => $settingsRaw['site_logo'] ?? '',
+                'active_shop_count' => (int)$activeShopCount
             ];
 
             header('Content-Type: application/json');
@@ -32,8 +39,11 @@ class OtherController {
             // Fallback for when table doesn't exist yet
             header('Content-Type: application/json');
             echo json_encode([
-                'site_name' => 'CodexaaPOS++',
-                'site_description' => 'Modern Point of Sale For Your Business'
+                'site_name' => 'CodexaaPos++',
+                'site_description' => 'Modern Point of Sale For Your Business',
+                'hero_content' => 'Streamline your retail operations with our powerful, cloud-based POS solution. Manage inventory, sales, customers, and more from anywhere.',
+                'site_logo' => '',
+                'active_shop_count' => 0
             ]);
         }
     }
@@ -44,6 +54,8 @@ class OtherController {
 
         $siteName = $requestData['site_name'] ?? null;
         $siteDescription = $requestData['site_description'] ?? null;
+        $heroContent = $requestData['hero_content'] ?? null;
+        $siteLogo = $requestData['site_logo'] ?? null;
 
         if ($siteName === null || $siteDescription === null) {
             Auth::jsonError('site_name and site_description are required.', 400);
@@ -54,9 +66,9 @@ class OtherController {
 
             // Use INSERT ... ON DUPLICATE KEY UPDATE for an atomic upsert
             DB::query(
-                'INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?), (?, ?)
+                'INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?), (?, ?), (?, ?), (?, ?)
                  ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)',
-                ['site_name', $siteName, 'site_description', $siteDescription]
+                ['site_name', $siteName, 'site_description', $siteDescription, 'hero_content', $heroContent ?? '', 'site_logo', $siteLogo ?? '']
             );
 
             DB::commit();
@@ -68,6 +80,158 @@ class OtherController {
             DB::rollBack();
             error_log('Update site settings error: ' . $e->getMessage());
             Auth::jsonError('Server error updating site settings.', 500);
+        }
+    }
+
+    // ==========================================
+    // PRICING PLANS
+    // ==========================================
+
+    public static function listPricingPlans() {
+        // This is a public endpoint, no authentication needed
+        try {
+            $stmt = DB::query('SELECT * FROM pricing_plans ORDER BY sort_order ASC');
+            $plans = $stmt->fetchAll();
+
+            foreach ($plans as &$plan) {
+                $plan['id'] = (int)$plan['id'];
+                $plan['price'] = (float)$plan['price'];
+                $plan['is_popular'] = (bool)$plan['is_popular'];
+                $plan['sort_order'] = (int)$plan['sort_order'];
+                $plan['features'] = json_decode($plan['features'], true) ?? [];
+            }
+
+            header('Content-Type: application/json');
+            echo json_encode($plans);
+
+        } catch (\Exception $e) {
+            error_log('Fetch pricing plans error: ' . $e->getMessage());
+            header('Content-Type: application/json');
+            echo json_encode([]);
+        }
+    }
+
+    public static function createPricingPlan($requestData) {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        $name = $requestData['name'] ?? null;
+        $description = $requestData['description'] ?? null;
+        $price = $requestData['price'] ?? null;
+        $period = $requestData['period'] ?? 'month';
+        $features = $requestData['features'] ?? [];
+        $isPopular = isset($requestData['is_popular']) ? ($requestData['is_popular'] ? 1 : 0) : 0;
+        $buttonText = $requestData['button_text'] ?? 'Get Started';
+        $sortOrder = $requestData['sort_order'] ?? 0;
+
+        if (empty($name) || $price === null) {
+            Auth::jsonError('name and price are required.', 400);
+        }
+
+        try {
+            DB::query(
+                'INSERT INTO pricing_plans (name, description, price, period, features, is_popular, button_text, sort_order) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                [$name, $description, $price, $period, json_encode($features), $isPopular, $buttonText, $sortOrder]
+            );
+            $newId = DB::lastInsertId();
+
+            header('Content-Type: application/json');
+            http_response_code(201);
+            echo json_encode([
+                'message' => 'Pricing plan created successfully.',
+                'planId' => (int)$newId
+            ]);
+
+        } catch (\Exception $e) {
+            error_log('Create pricing plan error: ' . $e->getMessage());
+            Auth::jsonError('Server error creating pricing plan.', 500);
+        }
+    }
+
+    public static function updatePricingPlan($id, $requestData) {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        $planId = (int)$id;
+        $name = $requestData['name'] ?? null;
+        $description = $requestData['description'] ?? null;
+        $price = $requestData['price'] ?? null;
+        $period = $requestData['period'] ?? null;
+        $features = $requestData['features'] ?? null;
+        $isPopular = isset($requestData['is_popular']) ? ($requestData['is_popular'] ? 1 : 0) : null;
+        $buttonText = $requestData['button_text'] ?? null;
+        $sortOrder = $requestData['sort_order'] ?? null;
+
+        if (empty($name) || $price === null) {
+            Auth::jsonError('name and price are required.', 400);
+        }
+
+        try {
+            $updateFields = [];
+            $params = [];
+
+            if ($name !== null) {
+                $updateFields[] = 'name = ?';
+                $params[] = $name;
+            }
+            if ($description !== null) {
+                $updateFields[] = 'description = ?';
+                $params[] = $description;
+            }
+            if ($price !== null) {
+                $updateFields[] = 'price = ?';
+                $params[] = $price;
+            }
+            if ($period !== null) {
+                $updateFields[] = 'period = ?';
+                $params[] = $period;
+            }
+            if ($features !== null) {
+                $updateFields[] = 'features = ?';
+                $params[] = json_encode($features);
+            }
+            if ($isPopular !== null) {
+                $updateFields[] = 'is_popular = ?';
+                $params[] = $isPopular;
+            }
+            if ($buttonText !== null) {
+                $updateFields[] = 'button_text = ?';
+                $params[] = $buttonText;
+            }
+            if ($sortOrder !== null) {
+                $updateFields[] = 'sort_order = ?';
+                $params[] = $sortOrder;
+            }
+
+            $params[] = $planId;
+
+            DB::query('UPDATE pricing_plans SET ' . implode(', ', $updateFields) . ' WHERE id = ?', $params);
+
+            header('Content-Type: application/json');
+            echo json_encode(['message' => 'Pricing plan updated successfully.']);
+
+        } catch (\Exception $e) {
+            error_log('Update pricing plan error: ' . $e->getMessage());
+            Auth::jsonError('Server error updating pricing plan.', 500);
+        }
+    }
+
+    public static function deletePricingPlan($id) {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        $planId = (int)$id;
+
+        try {
+            DB::query('DELETE FROM pricing_plans WHERE id = ?', [$planId]);
+
+            header('Content-Type: application/json');
+            echo json_encode(['message' => 'Pricing plan deleted successfully.']);
+
+        } catch (\Exception $e) {
+            error_log('Delete pricing plan error: ' . $e->getMessage());
+            Auth::jsonError('Server error deleting pricing plan.', 500);
         }
     }
 
