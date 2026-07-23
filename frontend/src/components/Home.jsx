@@ -281,7 +281,10 @@ export default function Home({ onLoginSuccess }) {
 
             {/* CTA Buttons */}
             <div className="flex flex-wrap gap-4">
-              <button className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-xl shadow-indigo-600/30 hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2">
+              <button
+                onClick={() => scrollToSection('features')}
+                className="px-8 py-4 bg-yellow-to-r from-yellow-400 to-yellow-500 hover:from-indigo-600 to-yellow-600 hover:from-yellow-600 hover:to-indigo-700 hover:to-yellow-700 border border-yellow-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-xl shadow-yellow-600/30 hover:shadow-yellow-500/40 hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2"
+              >
                 Learn More
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -416,7 +419,7 @@ export default function Home({ onLoginSuccess }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/50 disabled:cursor-not-allowed text-white font-semibold rounded-xl py-3 text-sm transition-all duration-200 shadow-lg shadow-indigo-600/30 hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:translate-y-0"
+                   className="w-full flex items-center justify-center gap-2 bg-gray-500 hover:bg-gray-500 disabled:bg-gray-500/50 disabled:cursor-not-allowed text-white font-semibold rounded-xl py-3 text-sm transition-all duration-200 shadow-lg shadow-indigo-600/30 hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:translate-y-0"
                 >
                   {loading ? (
                     <>
@@ -481,7 +484,7 @@ export default function Home({ onLoginSuccess }) {
       </div>
 
       {/* Features Section */}
-      <section className="relative z-10 py-20 lg:py-32 bg-slate-950/50">
+      <section id="features" className="relative z-10 py-20 lg:py-32 bg-slate-950/50">
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
           {/* Section Header */}
           <div className="text-center mb-16">
