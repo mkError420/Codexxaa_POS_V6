@@ -66,12 +66,31 @@ export default function SalesHistory() {
   const [filteredProfitData, setFilteredProfitData] = useState(null);
   const [filteredProfitLoading, setFilteredProfitLoading] = useState(false);
 
+  // Print filter option state
+  const [printFilterOption, setPrintFilterOption] = useState('all'); // 'all', 'due', 'paid'
+  const [showPrintFilterDropdown, setShowPrintFilterDropdown] = useState(false);
+  const printFilterRef = useRef(null);
+
+  // Sales list filter option state
+  const [salesFilterOption, setSalesFilterOption] = useState('all'); // 'all', 'due', 'paid'
+
   const handlePrint = (mode) => {
+    // Apply print filter to body
     document.body.classList.add(`print-mode-${mode}`);
-    window.print();
-    setTimeout(() => {
+    document.body.classList.add(`print-filter-${printFilterOption}`);
+    
+    // Use afterprint event to clean up classes
+    const cleanup = () => {
       document.body.classList.remove(`print-mode-${mode}`);
-    }, 500);
+      document.body.classList.remove(`print-filter-${printFilterOption}`);
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
+    
+    // Fallback timeout in case afterprint doesn't fire
+    setTimeout(cleanup, 2000);
+    
+    window.print();
   };
 
   const triggerAlert = (type, message) => {
@@ -138,7 +157,7 @@ export default function SalesHistory() {
       triggerAlert('error', 'No profit data available to download.');
       return;
     }
-
+    
     try {
       const doc = new jsPDF();
       const d = filteredProfitData;
@@ -147,7 +166,7 @@ export default function SalesHistory() {
       // Header
       doc.setFontSize(18);
       doc.text('Profit Breakdown Report', 14, 20);
-
+      
       doc.setFontSize(11);
       doc.setTextColor(100);
       doc.text(`Filtered Period: ${d.start_date} to ${d.end_date}`, 14, 28);
@@ -158,10 +177,10 @@ export default function SalesHistory() {
       doc.setTextColor(0);
       doc.text(`Total Cost: BDT ${parseFloat(d.grand_cost).toFixed(3)}`, 14, 45);
       doc.text(`Total Revenue: BDT ${parseFloat(d.grand_revenue).toFixed(3)}`, 14, 52);
-
+      
       doc.setTextColor(isLoss ? 220 : 20, isLoss ? 38 : 160, isLoss ? 38 : 20); // Red if loss, green if profit
       doc.text(`Net Profit: ${isLoss ? '-' : '+'}BDT ${Math.abs(parseFloat(d.grand_profit)).toFixed(3)} (${d.grand_margin}% margin)`, 14, 59);
-
+      
       // Table Data
       const tableColumn = ["#", "Product", "Qty", "Cost Price", "Selling Price", "Profit", "Margin"];
       const tableRows = [];
@@ -373,6 +392,16 @@ export default function SalesHistory() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (printFilterRef.current && !printFilterRef.current.contains(event.target)) {
+        setShowPrintFilterDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const openReceipt = (sale) => {
     setSelectedSale(sale);
     fetchSaleDetails(sale.id);
@@ -422,8 +451,8 @@ export default function SalesHistory() {
   const getFilteredCustomers = () => {
     if (!customerSearch) return customers;
     const lowerTerm = customerSearch.toLowerCase();
-    return customers.filter(c =>
-      c.name.toLowerCase().includes(lowerTerm) ||
+    return customers.filter(c => 
+      c.name.toLowerCase().includes(lowerTerm) || 
       (c.phone && c.phone.toLowerCase().includes(lowerTerm))
     );
   };
@@ -862,6 +891,12 @@ export default function SalesHistory() {
       (sale.payment_method && sale.payment_method.toLowerCase().includes(query)) ||
       (sale.final_amount && String(sale.final_amount).includes(query))
     );
+  }).filter((sale) => {
+    // Apply sales filter option
+    if (salesFilterOption === 'all') return true;
+    if (salesFilterOption === 'due') return parseFloat(sale.due_amount || 0) > 0;
+    if (salesFilterOption === 'paid') return parseFloat(sale.due_amount || 0) <= 0;
+    return true;
   }).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0) || (b.id || 0) - (a.id || 0));
 
   // Total due is summed only from sales records. Held bills with status='held' are
@@ -1211,7 +1246,7 @@ export default function SalesHistory() {
       </div>
 
 
-
+     
 
       {/* Summary Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
@@ -1604,15 +1639,29 @@ export default function SalesHistory() {
               <h3 className="font-bold text-slate-800">All Sales History</h3>
               <p className="text-xs text-slate-500">List of all recorded transactions.</p>
             </div>
-            {/*   <button
-              onClick={exportDueBillsToCSV}
-              className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 border border-gray-200 rounded-xl text-xs shadow-xs transition-colors flex items-center space-x-2"
-            >
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              <span>Export All Due</span>
-            </button> */}
+            <div className="flex items-center space-x-2">
+              <span className="text-xs font-medium text-slate-500">Filter:</span>
+              <div className="flex bg-slate-200 rounded-lg p-1">
+                <button
+                  onClick={() => setSalesFilterOption('all')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${salesFilterOption === 'all' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
+                >
+                  All Sales
+                </button>
+                <button
+                  onClick={() => setSalesFilterOption('due')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${salesFilterOption === 'due' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
+                >
+                  Only Due
+                </button>
+                <button
+                  onClick={() => setSalesFilterOption('paid')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${salesFilterOption === 'paid' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
+                >
+                  Only Paid
+                </button>
+              </div>
+            </div>
           </div>
           <table className="w-full text-left border-collapse">
             <thead>
@@ -1780,7 +1829,7 @@ export default function SalesHistory() {
         </div>
       )}
 
-      {/* Daily Product Sales Summary */}
+       {/* Daily Product Sales Summary */}
       {productDailySales && (
         <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
           <div className="p-4 bg-slate-50/50 border-b border-slate-100">
@@ -2282,15 +2331,44 @@ export default function SalesHistory() {
 
                         {/* Actions Footer */}
                         <div className="mt-8 space-y-2">
-                          <button
-                            onClick={() => handlePrint(previewMode)}
-                            className="w-full bg-slate-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl text-sm transition-all shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 flex items-center justify-center space-x-2"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                            </svg>
-                            <span>Print {previewMode === 'thermal' ? 'Thermal' : 'Regular A4'}</span>
-                          </button>
+                          <div className="relative" ref={printFilterRef}>
+                            <button
+                              onClick={() => setShowPrintFilterDropdown(!showPrintFilterDropdown)}
+                              className="w-full bg-slate-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl text-sm transition-all shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 flex items-center justify-center space-x-2"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                              </svg>
+                              <span>Print {previewMode === 'thermal' ? 'Thermal' : 'Regular A4'}</span>
+                              <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+
+                            {/* Print Filter Dropdown */}
+                            {showPrintFilterDropdown && (
+                              <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-[9999]">
+                                <button
+                                  onClick={() => { setPrintFilterOption('all'); setShowPrintFilterDropdown(false); handlePrint(previewMode); }}
+                                  className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors ${printFilterOption === 'all' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'}`}
+                                >
+                                  All Sales
+                                </button>
+                                <button
+                                  onClick={() => { setPrintFilterOption('due'); setShowPrintFilterDropdown(false); handlePrint(previewMode); }}
+                                  className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors ${printFilterOption === 'due' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'}`}
+                                >
+                                  Only Due
+                                </button>
+                                <button
+                                  onClick={() => { setPrintFilterOption('paid'); setShowPrintFilterDropdown(false); handlePrint(previewMode); }}
+                                  className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors ${printFilterOption === 'paid' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'}`}
+                                >
+                                  Only Paid
+                                </button>
+                              </div>
+                            )}
+                          </div>
 
                           {/* Admin delete transaction */}
                           <button
@@ -2376,12 +2454,14 @@ export default function SalesHistory() {
                                 <span>Tax ({taxRatePercent}%):</span>
                                 <span>৳{receipt.tax.toFixed(3)}</span>
                               </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 'bold', borderTop: '1px dashed #000', paddingTop: '3px', marginTop: '3px' }}>
-                                <span>Total Paid:</span>
-                                <span>৳{receipt.paid_amount.toFixed(3)}</span>
-                              </div>
-                              {receipt.due_amount > 0 && (
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontWeight: 'bold', color: '#ef4444', borderTop: '1px dashed #000', paddingTop: '2px', marginTop: '2px' }}>
+                              {printFilterOption !== 'due' && (
+                                <div className="print-section-paid" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 'bold', borderTop: '1px dashed #000', paddingTop: '3px', marginTop: '3px' }}>
+                                  <span>Total Paid:</span>
+                                  <span>৳{receipt.paid_amount.toFixed(3)}</span>
+                                </div>
+                              )}
+                              {receipt.due_amount > 0 && printFilterOption !== 'paid' && (
+                                <div className="print-section-due" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontWeight: 'bold', color: '#ef4444', borderTop: '1px dashed #000', paddingTop: '2px', marginTop: '2px' }}>
                                   <span>Due ammount:</span>
                                   <span>৳{receipt.due_amount.toFixed(3)}</span>
                                 </div>
@@ -2466,12 +2546,14 @@ export default function SalesHistory() {
                                   <span>Tax ({taxRatePercent}%)</span>
                                   <span style={{ fontWeight: '600', color: '#1e293b' }}>৳{receipt.tax.toFixed(3)}</span>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: '15px', fontWeight: 'bold', borderTop: '2px solid #e2e8f0', marginTop: '6px' }}>
-                                  <span>Total Paid</span>
-                                  <span style={{ color: '#6366f1' }}>৳{receipt.paid_amount.toFixed(3)}</span>
-                                </div>
-                                {receipt.due_amount > 0 && (
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: '#ef4444', fontWeight: 'bold', borderTop: '1px solid #e2e8f0', marginTop: '4px' }}>
+                                {printFilterOption !== 'due' && (
+                                  <div className="print-section-paid" style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: '15px', fontWeight: 'bold', borderTop: '2px solid #e2e8f0', marginTop: '6px' }}>
+                                    <span>Total Paid</span>
+                                    <span style={{ color: '#6366f1' }}>৳{receipt.paid_amount.toFixed(3)}</span>
+                                  </div>
+                                )}
+                                {receipt.due_amount > 0 && printFilterOption !== 'paid' && (
+                                  <div className="print-section-due" style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: '#ef4444', fontWeight: 'bold', borderTop: '1px solid #e2e8f0', marginTop: '4px' }}>
                                     <span>Due ammount</span>
                                     <span>৳{receipt.due_amount.toFixed(3)}</span>
                                   </div>
@@ -2595,12 +2677,13 @@ export default function SalesHistory() {
                                       </span>
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                      <span className={`text-[12px] font-bold px-3 py-1 rounded-full border ${isRowLoss
-                                        ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                        : p.margin >= 20
-                                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                          : 'bg-amber-50 text-amber-700 border-amber-200'
-                                        }`}>
+                                      <span className={`text-[12px] font-bold px-3 py-1 rounded-full border ${
+                                        isRowLoss
+                                          ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                          : p.margin >= 20
+                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                            : 'bg-amber-50 text-amber-700 border-amber-200'
+                                      }`}>
                                         {p.margin}%
                                       </span>
                                     </td>
