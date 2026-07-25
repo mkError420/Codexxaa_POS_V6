@@ -13,27 +13,27 @@ export default function OtherSales() {
   const [alert, setAlert] = useState(null);
   const [shops, setShops] = useState([]);
   const [selectedShopId, setSelectedShopId] = useState('');
- 
+
   // View Details Modal
   const [viewSale, setViewSale] = useState(null);
- 
+
   // Form State
   const [formData, setFormData] = useState({
     customer_name: '',
     customer_phone: '',
     sale_date: new Date().toBDISODateString(),
     notes: '',
-    items: [ { category: 'Miscellaneous', item_name: '', quantity: 1, unit_price: '' } ]
+    items: [{ category: 'Miscellaneous', item_name: '', quantity: 1, unit_price: '' }]
   });
-  
+
   const [submitting, setSubmitting] = useState(false);
- 
+
   // Pagination & Filters for Recent History
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 4;
- 
+
   const fetchSales = async () => {
     setLoading(true);
     try {
@@ -44,7 +44,7 @@ export default function OtherSales() {
       }
       if (filterStartDate) url += `start_date=${filterStartDate}&`;
       if (filterEndDate) url += `end_date=${filterEndDate}&`;
- 
+
       const response = await fetch(url, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -58,7 +58,7 @@ export default function OtherSales() {
       setLoading(false);
     }
   };
- 
+
   useEffect(() => {
     if (isSuperAdmin) {
       const fetchShops = async () => {
@@ -132,21 +132,21 @@ export default function OtherSales() {
   const exportPDF = () => {
     const doc = new jsPDF();
     doc.text('Other Sales History', 14, 15);
-    
+
     if (filterStartDate || filterEndDate) {
       doc.setFontSize(10);
       doc.text(`Date Range: ${filterStartDate || '...'} to ${filterEndDate || '...'}`, 14, 22);
     }
-    
+
     const tableData = sales.map(sale => {
-       const items = parseItems(sale.items).map(i => `${i.item_name} (${i.category})`).join(', ');
-       return [
-         formatDate(sale.sale_date),
-         sale.title || 'Other Sale',
-         sale.customer_name || 'Walk-in',
-         formatCurrencyPDF(sale.amount),
-         items
-       ];
+      const items = parseItems(sale.items).map(i => `${i.item_name} (${i.category})`).join(', ');
+      return [
+        formatDate(sale.sale_date),
+        sale.title || 'Other Sale',
+        sale.customer_name || 'Walk-in',
+        formatCurrencyPDF(sale.amount),
+        items
+      ];
     });
 
     autoTable(doc, {
@@ -155,7 +155,7 @@ export default function OtherSales() {
       startY: (filterStartDate || filterEndDate) ? 28 : 22,
       styles: { fontSize: 8 },
     });
-    
+
     doc.save('OtherSales_History.pdf');
   };
 
@@ -173,7 +173,7 @@ export default function OtherSales() {
       triggerAlert('error', 'Please provide a sale date.');
       return;
     }
-    
+
     // Validate items
     const validItems = formData.items.filter(i => i.item_name.trim() !== '' && parseFloat(i.unit_price) > 0);
     if (validItems.length === 0) {
@@ -237,12 +237,12 @@ export default function OtherSales() {
       customer_phone: '',
       sale_date: new Date().toBDISODateString(),
       notes: '',
-      items: [ { category: 'Miscellaneous', item_name: '', quantity: 1, unit_price: '' } ]
+      items: [{ category: 'Miscellaneous', item_name: '', quantity: 1, unit_price: '' }]
     });
   };
 
   const formatCurrency = (val) => `৳${parseFloat(val).toFixed(2)}`;
-  
+
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     const parts = dateStr.split('T')[0].split('-');
@@ -275,13 +275,12 @@ export default function OtherSales() {
     <div className="space-y-6">
       {/* Alerts Banner */}
       {alert && (
-        <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl shadow-lg flex items-center transition-all ${
-          alert.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'
-        }`}>
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl shadow-lg flex items-center transition-all ${alert.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'
+          }`}>
           <span className="text-sm font-semibold">{alert.message}</span>
         </div>
       )}
- 
+
       {/* Title Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -304,11 +303,11 @@ export default function OtherSales() {
           </div>
         )}
       </div>
- 
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* LEFT COLUMN: Entry Form */}
         <div className="lg:col-span-2 space-y-6">
-          
+
           {/* Quick Category Shortcuts */}
           <div>
             <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Quick Entry Shortcuts</h3>
@@ -326,7 +325,7 @@ export default function OtherSales() {
                 <span className="font-bold text-slate-800">Wastage / Scrap</span>
                 <span className="text-xs text-slate-500 mt-1">Paper, Hardboard, Plastic</span>
               </button>
-              
+
               <button
                 type="button"
                 onClick={() => handleQuickCategoryClick('Mobile Banking Services', 'Cash-In/Out: ')}
@@ -410,7 +409,7 @@ export default function OtherSales() {
                 <div className="flex justify-between items-center mb-3">
                   <h4 className="text-sm font-bold text-slate-700">Items / Services</h4>
                 </div>
-                
+
                 <div className="space-y-4">
                   {formData.items.map((item, index) => (
                     <div key={index} className="flex flex-col gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative">
@@ -426,7 +425,7 @@ export default function OtherSales() {
                           </svg>
                         </button>
                       )}
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Sale Category</label>
@@ -490,8 +489,8 @@ export default function OtherSales() {
                           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-3">Item Subtotal (Profit):</span>
                           <span className="font-black text-emerald-600 text-lg">
                             {formatCurrency(
-                              item.category === 'Mobile Banking Services' 
-                                ? (parseFloat(item.unit_price) || 0) 
+                              item.category === 'Mobile Banking Services'
+                                ? (parseFloat(item.unit_price) || 0)
                                 : ((parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0))
                             )}
                           </span>
@@ -583,27 +582,27 @@ export default function OtherSales() {
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-2">
-                <input 
-                  type="date" 
-                  value={filterStartDate} 
-                  onChange={(e) => setFilterStartDate(e.target.value)} 
+                <input
+                  type="date"
+                  value={filterStartDate}
+                  onChange={(e) => setFilterStartDate(e.target.value)}
                   className="border border-slate-200 rounded-lg p-1.5 text-xs focus:ring-1 focus:ring-emerald-500 outline-none w-full"
                 />
-                <input 
-                  type="date" 
-                  value={filterEndDate} 
-                  onChange={(e) => setFilterEndDate(e.target.value)} 
+                <input
+                  type="date"
+                  value={filterEndDate}
+                  onChange={(e) => setFilterEndDate(e.target.value)}
                   className="border border-slate-200 rounded-lg p-1.5 text-xs focus:ring-1 focus:ring-emerald-500 outline-none w-full"
                 />
-                <button 
-                  onClick={() => fetchSales()} 
+                <button
+                  onClick={() => fetchSales()}
                   className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-3 py-1.5 rounded-lg text-xs transition-colors"
                 >
                   Filter
                 </button>
               </div>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-3">
               {loading ? (
                 <div className="p-8 text-center text-slate-500 text-sm font-medium">Loading history...</div>
@@ -620,8 +619,8 @@ export default function OtherSales() {
                     const totalPages = Math.ceil(sales.length / itemsPerPage) || 1;
                     const currentSales = sales.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
                     return currentSales.map(sale => (
-                      <div 
-                        key={sale.id} 
+                      <div
+                        key={sale.id}
                         onClick={() => setViewSale(sale)}
                         className="bg-white border border-slate-200 p-3.5 rounded-xl shadow-sm hover:shadow-md hover:border-emerald-300 cursor-pointer transition-all flex flex-col group"
                       >
@@ -649,10 +648,10 @@ export default function OtherSales() {
                 </div>
               )}
             </div>
-            
+
             {sales.length > 0 && (
-              <div className="p-3 border-t border-slate-100 bg-slate-50 flex justify-between items-center text-xs font-bold text-slate-500 mt-auto">
-                <button 
+              <div className="p-3 border-t border-slate-100 bg-slate-50 flex flex-wrap justify-center items-center gap-3 text-xs font-bold text-slate-500 mt-auto">
+                <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                   className="px-3 py-1.5 rounded-lg hover:bg-slate-200 disabled:opacity-50 transition-colors"
@@ -660,7 +659,7 @@ export default function OtherSales() {
                   Prev
                 </button>
                 <span>Page {currentPage} of {Math.ceil(sales.length / itemsPerPage) || 1}</span>
-                <button 
+                <button
                   onClick={() => setCurrentPage(p => Math.min(Math.ceil(sales.length / itemsPerPage) || 1, p + 1))}
                   disabled={currentPage === (Math.ceil(sales.length / itemsPerPage) || 1)}
                   className="px-3 py-1.5 rounded-lg hover:bg-slate-200 disabled:opacity-50 transition-colors"
@@ -690,7 +689,7 @@ export default function OtherSales() {
                 </svg>
               </button>
             </div>
-            
+
             <div className="p-6 overflow-y-auto">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6">
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">

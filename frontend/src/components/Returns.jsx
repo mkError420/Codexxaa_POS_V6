@@ -138,7 +138,7 @@ export default function Returns() {
           ...prev,
           customer_id: String(saleData.customer_id)
         }));
-        
+
         // Find due balance of the customer
         const cust = customers.find(c => String(c.id) === String(saleData.customer_id));
         if (cust) {
@@ -248,8 +248,8 @@ export default function Returns() {
     }
     if (!customerSearchTerm) return customers;
     const lowerTerm = customerSearchTerm.toLowerCase();
-    return customers.filter(c => 
-      c.name.toLowerCase().includes(lowerTerm) || 
+    return customers.filter(c =>
+      c.name.toLowerCase().includes(lowerTerm) ||
       (c.phone && c.phone.toLowerCase().includes(lowerTerm))
     );
   };
@@ -431,9 +431,9 @@ export default function Returns() {
   const filteredReturns = returns.filter(r => {
     const searchLower = search.toLowerCase();
     return r.product_name.toLowerCase().includes(searchLower) ||
-           r.product_sku.toLowerCase().includes(searchLower) ||
-           (r.customer_name && r.customer_name.toLowerCase().includes(searchLower)) ||
-           (r.notes && r.notes.toLowerCase().includes(searchLower));
+      r.product_sku.toLowerCase().includes(searchLower) ||
+      (r.customer_name && r.customer_name.toLowerCase().includes(searchLower)) ||
+      (r.notes && r.notes.toLowerCase().includes(searchLower));
   });
 
   const getFilteredProductsForReturn = () => {
@@ -456,9 +456,8 @@ export default function Returns() {
     <div className="space-y-6">
       {/* Alert Banner */}
       {alert && (
-        <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl shadow-lg flex items-center transition-all ${
-          alert.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'
-        }`}>
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl shadow-lg flex items-center transition-all ${alert.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'
+          }`}>
           <span className="text-sm font-semibold">{alert.message}</span>
         </div>
       )}
@@ -470,26 +469,26 @@ export default function Returns() {
           <p className="text-sm text-slate-500">Record customer product returns, auto-adjust inventory levels, and calculate return values</p>
         </div>
         <div className="flex items-center space-x-2">
+          <button
+            onClick={exportReturnsToCSV}
+            className="bg-white hover:bg-slate-50 text-slate-700 font-semibold py-2.5 px-4 border border-slate-200 rounded-xl text-sm shadow-xs transition-colors flex items-center space-x-2"
+          >
+            <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span>Export CSV</span>
+          </button>
+          {!isSuperAdmin && (
             <button
-                onClick={exportReturnsToCSV}
-                className="bg-white hover:bg-slate-50 text-slate-700 font-semibold py-2.5 px-4 border border-slate-200 rounded-xl text-sm shadow-xs transition-colors flex items-center space-x-2"
+              onClick={() => { resetForm(); setShowAddModal(true); }}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-5 rounded-xl text-sm shadow-sm transition-colors flex items-center space-x-2 w-full sm:w-auto justify-center"
             >
-                <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                <span>Export CSV</span>
-            </button>
-            {!isSuperAdmin && (
-            <button
-                onClick={() => { resetForm(); setShowAddModal(true); }}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-5 rounded-xl text-sm shadow-sm transition-colors flex items-center space-x-2 w-full sm:w-auto justify-center"
-            >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                </svg>
-                <span>Process Return</span>
+              </svg>
+              <span>Process Return</span>
             </button>
-            )}
+          )}
         </div>
       </div>
 
@@ -639,9 +638,8 @@ export default function Returns() {
                     <td className="p-4 font-bold text-slate-800">+{r.quantity}</td>
                     <td className="p-4 font-black text-rose-600">{formatCurrency(r.refund_amount)}</td>
                     <td className="p-4">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${
-                        getRefundMethodLabel(r) === 'Store Credit' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
-                      }`}>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${getRefundMethodLabel(r) === 'Store Credit' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
+                        }`}>
                         {getRefundMethodLabel(r)}
                       </span>
                     </td>
@@ -670,7 +668,7 @@ export default function Returns() {
           <div className="text-xs font-semibold text-slate-500">
             Showing <span className="text-slate-800">{indexOfFirstItem + 1}</span> to <span className="text-slate-800">{Math.min(indexOfLastItem, filteredReturns.length)}</span> of <span className="text-slate-800">{filteredReturns.length}</span> entries
           </div>
-          <div className="flex items-center space-x-1.5">
+          <div className="flex items-center flex-wrap gap-1.5 justify-center sm:justify-end">
             <button
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
@@ -682,11 +680,10 @@ export default function Returns() {
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className={`w-9 h-9 rounded-xl text-xs font-bold transition-all ${
-                  currentPage === page
-                    ? 'bg-indigo-650 text-white shadow-xs'
-                    : 'bg-white hover:bg-slate-50 text-slate-655 border border-slate-200'
-                }`}
+                className={`w-9 h-9 rounded-xl text-xs font-bold transition-all ${currentPage === page
+                  ? 'bg-indigo-650 text-white shadow-xs'
+                  : 'bg-white hover:bg-slate-50 text-slate-655 border border-slate-200'
+                  }`}
               >
                 {page}
               </button>

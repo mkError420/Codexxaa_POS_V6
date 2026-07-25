@@ -78,7 +78,7 @@ export default function SalesHistory() {
     // Apply print filter to body
     document.body.classList.add(`print-mode-${mode}`);
     document.body.classList.add(`print-filter-${printFilterOption}`);
-    
+
     // Use afterprint event to clean up classes
     const cleanup = () => {
       document.body.classList.remove(`print-mode-${mode}`);
@@ -86,10 +86,10 @@ export default function SalesHistory() {
       window.removeEventListener('afterprint', cleanup);
     };
     window.addEventListener('afterprint', cleanup);
-    
+
     // Fallback timeout in case afterprint doesn't fire
     setTimeout(cleanup, 2000);
-    
+
     window.print();
   };
 
@@ -157,7 +157,7 @@ export default function SalesHistory() {
       triggerAlert('error', 'No profit data available to download.');
       return;
     }
-    
+
     try {
       const doc = new jsPDF();
       const d = filteredProfitData;
@@ -166,7 +166,7 @@ export default function SalesHistory() {
       // Header
       doc.setFontSize(18);
       doc.text('Profit Breakdown Report', 14, 20);
-      
+
       doc.setFontSize(11);
       doc.setTextColor(100);
       doc.text(`Filtered Period: ${d.start_date} to ${d.end_date}`, 14, 28);
@@ -177,10 +177,10 @@ export default function SalesHistory() {
       doc.setTextColor(0);
       doc.text(`Total Cost: BDT ${parseFloat(d.grand_cost).toFixed(3)}`, 14, 45);
       doc.text(`Total Revenue: BDT ${parseFloat(d.grand_revenue).toFixed(3)}`, 14, 52);
-      
+
       doc.setTextColor(isLoss ? 220 : 20, isLoss ? 38 : 160, isLoss ? 38 : 20); // Red if loss, green if profit
       doc.text(`Net Profit: ${isLoss ? '-' : '+'}BDT ${Math.abs(parseFloat(d.grand_profit)).toFixed(3)} (${d.grand_margin}% margin)`, 14, 59);
-      
+
       // Table Data
       const tableColumn = ["#", "Product", "Qty", "Cost Price", "Selling Price", "Profit", "Margin"];
       const tableRows = [];
@@ -451,8 +451,8 @@ export default function SalesHistory() {
   const getFilteredCustomers = () => {
     if (!customerSearch) return customers;
     const lowerTerm = customerSearch.toLowerCase();
-    return customers.filter(c => 
-      c.name.toLowerCase().includes(lowerTerm) || 
+    return customers.filter(c =>
+      c.name.toLowerCase().includes(lowerTerm) ||
       (c.phone && c.phone.toLowerCase().includes(lowerTerm))
     );
   };
@@ -1246,7 +1246,7 @@ export default function SalesHistory() {
       </div>
 
 
-     
+
 
       {/* Summary Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
@@ -1258,12 +1258,12 @@ export default function SalesHistory() {
             }`}>
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Sales Profit</span>
-{/*               <div className={`p-2 rounded-xl ${(parseFloat(revenueData.sales_revenue || 0) - parseFloat(revenueData.cost_of_goods_sold || 0)) >= 0 ? 'bg-indigo-100 text-indigo-600' : 'bg-rose-100 text-rose-600'
+              <div className={`p-2 rounded-xl ${(parseFloat(revenueData.sales_revenue || 0) - parseFloat(revenueData.cost_of_goods_sold || 0)) >= 0 ? 'bg-indigo-100 text-indigo-600' : 'bg-rose-100 text-rose-600'
                 }`}>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg> 
-              </div> */}
+                </svg>
+              </div>
             </div>
             <div className="mt-3">
               <span className="block text-xl font-black">{formatCurrency((parseFloat(revenueData.sales_revenue || 0) - parseFloat(revenueData.cost_of_goods_sold || 0)))}</span>
@@ -1272,44 +1272,44 @@ export default function SalesHistory() {
           </div>
         )}
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex items-center space-x-3">
-{/*           <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
+          <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
-          </div> */}
+          </div>
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Sales</p>
             <h3 className="text-xl font-extrabold text-slate-800">{totalSalesCount}</h3>
           </div>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex items-center space-x-3">
-{/*           <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
+          <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-          </div> */}
+          </div>
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Revenue</p>
             <h3 className="text-xl font-extrabold text-indigo-600"><span className="text-sm">BDT:</span> {totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</h3>
           </div>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex items-center space-x-3">
-     {/*      <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
+          <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
             </svg>
-          </div> */}
+          </div>
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Collected</p>
             <h3 className="text-xl font-extrabold text-emerald-600"><span className="text-sm">BDT:</span> {totalCollected.toLocaleString('en-IN', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</h3>
           </div>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex items-center space-x-3">
-{/*           <div className={`p-2.5 rounded-xl ${totalDue > 0 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+          <div className={`p-2.5 rounded-xl ${totalDue > 0 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-          </div> */}
+          </div>
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Due</p>
             <h3 className={`text-xl font-extrabold ${totalDue > 0 ? 'text-rose-600' : 'text-emerald-600'}`}><span className="text-sm">BDT:</span> {totalDue.toLocaleString('en-IN', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</h3>
@@ -1796,7 +1796,7 @@ export default function SalesHistory() {
           <div className="text-xs font-semibold text-slate-500">
             Showing <span className="text-slate-800">{indexOfFirstSale + 1}</span> to <span className="text-slate-800">{Math.min(indexOfLastSale, sales.length)}</span> of <span className="text-slate-800">{sales.length}</span> entries
           </div>
-          <div className="flex items-center space-x-1.5">
+          <div className="flex items-center flex-wrap gap-1.5 justify-center sm:justify-end">
             <button
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
@@ -1829,7 +1829,7 @@ export default function SalesHistory() {
         </div>
       )}
 
-       {/* Daily Product Sales Summary */}
+      {/* Daily Product Sales Summary */}
       {productDailySales && (
         <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
           <div className="p-4 bg-slate-50/50 border-b border-slate-100">
@@ -2677,13 +2677,12 @@ export default function SalesHistory() {
                                       </span>
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                      <span className={`text-[12px] font-bold px-3 py-1 rounded-full border ${
-                                        isRowLoss
-                                          ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                          : p.margin >= 20
-                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                            : 'bg-amber-50 text-amber-700 border-amber-200'
-                                      }`}>
+                                      <span className={`text-[12px] font-bold px-3 py-1 rounded-full border ${isRowLoss
+                                        ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                        : p.margin >= 20
+                                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                          : 'bg-amber-50 text-amber-700 border-amber-200'
+                                        }`}>
                                         {p.margin}%
                                       </span>
                                     </td>

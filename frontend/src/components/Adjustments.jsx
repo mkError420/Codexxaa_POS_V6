@@ -344,7 +344,7 @@ export default function Adjustments() {
                     p.name.toLowerCase().includes(filterProductSearch.toLowerCase()) ||
                     (p.sku && p.sku.toLowerCase().includes(filterProductSearch.toLowerCase()))
                   );
-                  const maxIndex = filtered.length; 
+                  const maxIndex = filtered.length;
                   if (e.key === 'ArrowDown') {
                     e.preventDefault();
                     setFilterProductFocusedIndex(prev => (prev < maxIndex ? prev + 1 : prev));
@@ -446,146 +446,145 @@ export default function Adjustments() {
       {(() => {
         const totalPages = Math.ceil(adjustments.length / itemsPerPage);
         const currentAdjustments = adjustments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-        
+
         return (
           <>
             <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Date</th>
-                {isSuperAdmin && (
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Shop</th>
-                )}
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Product</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Previous Qty (Unit)</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Adjusted Qty (Unit)</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Difference (Unit)</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Reason</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Adjusted By</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {loading ? (
-                <tr>
-                  <td colSpan="9" className="px-6 py-8 text-center text-slate-500">Loading adjustments...</td>
-                </tr>
-              ) : adjustments.length === 0 ? (
-                <tr>
-                  <td colSpan="9" className="px-6 py-8 text-center text-slate-500">No adjustments found</td>
-                </tr>
-              ) : (
-                currentAdjustments.map(adj => (
-                  <tr key={adj.id} className="hover:bg-slate-50">
-                    <td className="px-6 py-4 text-sm text-slate-700">{formatDate(adj.created_at)}</td>
-                    {isSuperAdmin && (
-                      <td className="px-6 py-4 text-sm font-medium text-slate-900">
-                        {adj.shop_name || 'N/A'}
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Date</th>
+                      {isSuperAdmin && (
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Shop</th>
+                      )}
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Product</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Previous Qty (Unit)</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Adjusted Qty (Unit)</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Difference (Unit)</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Type</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Reason</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Adjusted By</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {loading ? (
+                      <tr>
+                        <td colSpan="9" className="px-6 py-8 text-center text-slate-500">Loading adjustments...</td>
+                      </tr>
+                    ) : adjustments.length === 0 ? (
+                      <tr>
+                        <td colSpan="9" className="px-6 py-8 text-center text-slate-500">No adjustments found</td>
+                      </tr>
+                    ) : (
+                      currentAdjustments.map(adj => (
+                        <tr key={adj.id} className="hover:bg-slate-50">
+                          <td className="px-6 py-4 text-sm text-slate-700">{formatDate(adj.created_at)}</td>
+                          {isSuperAdmin && (
+                            <td className="px-6 py-4 text-sm font-medium text-slate-900">
+                              {adj.shop_name || 'N/A'}
+                            </td>
+                          )}
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-medium text-slate-900">{adj.product_name}</div>
+                            <div className="text-xs text-slate-500">{adj.product_sku}</div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-700">{+Number(adj.previous_quantity).toFixed(3)} <span className="text-xs uppercase text-slate-500">{adj.product_unit}</span></td>
+                          <td className="px-6 py-4 text-sm font-medium text-slate-900">{+Number(adj.adjusted_quantity).toFixed(3)} <span className="text-xs uppercase text-slate-500">{adj.product_unit}</span></td>
+                          <td className={`px-6 py-4 text-sm font-semibold ${adj.difference >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                            {adj.difference >= 0 ? '+' : ''}{+Number(adj.difference).toFixed(3)} <span className="text-xs uppercase opacity-75">{adj.product_unit}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${getAdjustmentBadge(adj.adjustment_type)}`}>
+                              {adj.adjustment_type}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-700">{adj.reason}</td>
+                          <td className="px-6 py-4 text-sm text-slate-700">{adj.adjusted_by_name}</td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center space-x-3">
+                              <button
+                                onClick={() => openEditModal(adj)}
+                                className="text-indigo-600 hover:text-indigo-800 transition-colors p-1 bg-indigo-50 hover:bg-indigo-100 rounded"
+                                title="Edit"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => handleDelete(adj)}
+                                className="text-rose-600 hover:text-rose-800 transition-colors p-1 bg-rose-50 hover:bg-rose-100 rounded"
+                                title="Delete"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
                     )}
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-slate-900">{adj.product_name}</div>
-                      <div className="text-xs text-slate-500">{adj.product_sku}</div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-700">{+Number(adj.previous_quantity).toFixed(3)} <span className="text-xs uppercase text-slate-500">{adj.product_unit}</span></td>
-                    <td className="px-6 py-4 text-sm font-medium text-slate-900">{+Number(adj.adjusted_quantity).toFixed(3)} <span className="text-xs uppercase text-slate-500">{adj.product_unit}</span></td>
-                    <td className={`px-6 py-4 text-sm font-semibold ${adj.difference >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                      {adj.difference >= 0 ? '+' : ''}{+Number(adj.difference).toFixed(3)} <span className="text-xs uppercase opacity-75">{adj.product_unit}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${getAdjustmentBadge(adj.adjustment_type)}`}>
-                        {adj.adjustment_type}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-700">{adj.reason}</td>
-                    <td className="px-6 py-4 text-sm text-slate-700">{adj.adjusted_by_name}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-3">
-                        <button
-                          onClick={() => openEditModal(adj)}
-                          className="text-indigo-600 hover:text-indigo-800 transition-colors p-1 bg-indigo-50 hover:bg-indigo-100 rounded"
-                          title="Edit"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => handleDelete(adj)}
-                          className="text-rose-600 hover:text-rose-800 transition-colors p-1 bg-rose-50 hover:bg-rose-100 rounded"
-                          title="Delete"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between bg-white px-4 py-3 border border-slate-200 rounded-2xl shadow-xs">
-          <div className="flex flex-1 items-center justify-between">
-            <div className="hidden sm:block">
-              <p className="text-sm text-slate-700">
-                Showing <span className="font-semibold">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-semibold">{Math.min(currentPage * itemsPerPage, adjustments.length)}</span> of <span className="font-semibold">{adjustments.length}</span> results
-              </p>
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <div>
-              <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                <button
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  className="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
-                >
-                  <span className="sr-only">Previous</span>
-                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
-                  </svg>
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter(p => {
-                    if (totalPages <= 15) return true;
-                    const start = Math.max(1, Math.min(currentPage - 7, totalPages - 14));
-                    return p >= start && p < start + 15;
-                  })
-                  .map(p => (
-                  <button
-                    key={p}
-                    onClick={() => setCurrentPage(p)}
-                    className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold focus:z-20 ${
-                      currentPage === p 
-                        ? 'bg-indigo-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 z-10' 
-                        : 'text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                ))}
-                <button
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                  className="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
-                >
-                  <span className="sr-only">Next</span>
-                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
-                  </svg>
-                </button>
-              </nav>
-            </div>
-          </div>
-        </div>
-      )}
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-4 flex items-center justify-between bg-white px-4 py-3 border border-slate-200 rounded-2xl shadow-xs">
+                <div className="flex flex-1 items-center justify-between">
+                  <div className="hidden sm:block">
+                    <p className="text-sm text-slate-700">
+                      Showing <span className="font-semibold">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-semibold">{Math.min(currentPage * itemsPerPage, adjustments.length)}</span> of <span className="font-semibold">{adjustments.length}</span> results
+                    </p>
+                  </div>
+                  <div>
+                    <nav className="isolate inline-flex flex-wrap -space-x-px rounded-md shadow-sm justify-center sm:justify-end" aria-label="Pagination">
+                      <button
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                        className="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
+                      >
+                        <span className="sr-only">Previous</span>
+                        <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(p => {
+                          if (totalPages <= 15) return true;
+                          const start = Math.max(1, Math.min(currentPage - 7, totalPages - 14));
+                          return p >= start && p < start + 15;
+                        })
+                        .map(p => (
+                          <button
+                            key={p}
+                            onClick={() => setCurrentPage(p)}
+                            className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold focus:z-20 ${currentPage === p
+                              ? 'bg-indigo-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 z-10'
+                              : 'text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50'
+                              }`}
+                          >
+                            {p}
+                          </button>
+                        ))}
+                      <button
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                        className="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
+                      >
+                        <span className="sr-only">Next</span>
+                        <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </nav>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         );
       })()}

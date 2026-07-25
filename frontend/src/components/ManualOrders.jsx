@@ -837,9 +837,9 @@ export default function ManualOrders() {
             onClick={() => setIsCashSalesVisible(!isCashSalesVisible)}
             className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-5 rounded-xl text-sm shadow transition-colors flex items-center space-x-2"
           >
-   {/*          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg> */}
+            </svg>
             <span>Cash Sales</span>
           </button>
           <button
@@ -971,7 +971,7 @@ export default function ManualOrders() {
                   Showing {((currentCashPage - 1) * 10) + 1} - {Math.min(currentCashPage * 10, cashOrders.length)} of {cashOrders.length} orders
                 </span>
 
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center flex-wrap gap-1 justify-center sm:justify-end">
                   {/* Previous Button */}
                   <button
                     type="button"
@@ -1187,7 +1187,7 @@ export default function ManualOrders() {
                 Showing {((currentCreditPage - 1) * 10) + 1} - {Math.min(currentCreditPage * 10, creditOrders.length)} of {creditOrders.length} orders
               </span>
 
-              <div className="flex items-center space-x-1 overflow-x-auto max-w-full pb-1">
+              <div className="flex items-center flex-wrap gap-1 justify-center sm:justify-end overflow-x-auto max-w-full pb-1">
                 {/* Previous Button */}
                 <button
                   type="button"

@@ -3,7 +3,7 @@ import API_BASE_URL from '../config';
 
 export default function AllTransactions() {
   const userObj = JSON.parse(localStorage.getItem('user') || '{}');
-  
+
   const [transactions, setTransactions] = useState([]);
   const [summary, setSummary] = useState({
     total_sales: 0,
@@ -16,7 +16,7 @@ export default function AllTransactions() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Filters
   const [activeTab, setActiveTab] = useState('all'); // all, purchase, sales, due, wastage, other_cost, other_sales
   const [search, setSearch] = useState('');
@@ -186,11 +186,11 @@ export default function AllTransactions() {
     ]);
 
     const csvString = [headers.join(','), ...rows.map(e => e.join(','))].join('\r\n');
-    
+
     // UTF-8 BOM prefix for Excel symbol support
     const blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    
+
     const link = document.createElement('a');
     const shopSlug = (userObj.shop_name || 'Shop').replace(/[^a-zA-Z0-9]/g, '_');
     const dateStr = new Date().toISOString().split('T')[0];
@@ -443,11 +443,10 @@ export default function AllTransactions() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
-                activeTab === tab.id
-                  ? 'bg-slate-900 text-white shadow-md shadow-slate-900/10'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-              }`}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${activeTab === tab.id
+                ? 'bg-slate-900 text-white shadow-md shadow-slate-900/10'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`}
             >
               {tab.label}
             </button>
@@ -492,11 +491,10 @@ export default function AllTransactions() {
               <button
                 key={df.id}
                 onClick={() => setDateFilter(df.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                  dateFilter === df.id
-                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                }`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${dateFilter === df.id
+                  ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                  : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                  }`}
               >
                 {df.label}
               </button>
@@ -636,7 +634,7 @@ export default function AllTransactions() {
                 <span className="font-semibold text-slate-800">{transactions.length}</span> entries (25 per page)
               </div>
 
-              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1">
+              <div className="flex items-center flex-wrap gap-1 justify-center sm:justify-end overflow-x-auto no-scrollbar py-1">
                 {/* Previous Button */}
                 <button
                   onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
@@ -654,11 +652,10 @@ export default function AllTransactions() {
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                      currentPage === page
-                        ? 'border-slate-900 bg-slate-900 text-white shadow-sm'
-                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                    }`}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${currentPage === page
+                      ? 'border-slate-900 bg-slate-900 text-white shadow-sm'
+                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      }`}
                   >
                     {page}
                   </button>
