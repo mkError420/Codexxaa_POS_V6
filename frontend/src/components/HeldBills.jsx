@@ -264,11 +264,11 @@ export default function HeldBills({ onResume = () => { }, onHeldBillsChange = ()
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Active Held Bills */}
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex items-center space-x-3">
-          <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl">
+       {/*    <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-          </div>
+          </div> */}
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Due</p>
             <h3 className="text-xl font-extrabold text-slate-800">{totalHeld}</h3>
@@ -277,11 +277,11 @@ export default function HeldBills({ onResume = () => { }, onHeldBillsChange = ()
 
         {/* Total Due Bills */}
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex items-center space-x-3">
-          <div className="p-2.5 bg-rose-50 text-rose-600 rounded-xl">
+         {/*  <div className="p-2.5 bg-rose-50 text-rose-600 rounded-xl">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
-          </div>
+          </div> */}
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Due Bills</p>
             <h3 className="text-xl font-extrabold text-slate-800">{totalDueBills}</h3>
@@ -290,11 +290,11 @@ export default function HeldBills({ onResume = () => { }, onHeldBillsChange = ()
 
         {/* Pending Due Amount */}
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex items-center space-x-3">
-          <div className={`p-2.5 rounded-xl ${totalPendingDue > 0 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+          {/* <div className={`p-2.5 rounded-xl ${totalPendingDue > 0 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-          </div>
+          </div> */}
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pending Due</p>
             <h3 className={`text-xl font-extrabold ${totalPendingDue > 0 ? 'text-rose-600' : 'text-slate-800'}`}>৳{totalPendingDue.toFixed(2)}</h3>
@@ -303,11 +303,11 @@ export default function HeldBills({ onResume = () => { }, onHeldBillsChange = ()
 
         {/* Completed */}
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex items-center space-x-3">
-          <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
+ {/*          <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-          </div>
+          </div> */}
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Completed</p>
             <h3 className="text-xl font-extrabold text-emerald-600">{completedDueCount}</h3>
