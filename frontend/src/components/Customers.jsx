@@ -520,8 +520,8 @@ export default function Customers() {
   const getFilteredEditProducts = () => {
     if (!editProductSearchTerm) return allProducts;
     const lowerTerm = editProductSearchTerm.toLowerCase();
-    return allProducts.filter(p => 
-      p.name.toLowerCase().includes(lowerTerm) || 
+    return allProducts.filter(p =>
+      p.name.toLowerCase().includes(lowerTerm) ||
       (p.sku && p.sku.toLowerCase().includes(lowerTerm))
     );
   };
@@ -889,7 +889,7 @@ export default function Customers() {
           <h2 className="text-2xl font-bold text-slate-800">Customer Directory</h2>
           <p className="text-sm text-slate-500">Manage buyer directory, records, and contact options</p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <button
             onClick={handleDownloadCSV}
             className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm shadow transition-colors flex items-center space-x-2"
@@ -910,12 +910,13 @@ export default function Customers() {
           </button>
           <button
             onClick={() => { resetForm(); setShowAddModal(true); }}
-            className="bg-slate-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-5 rounded-xl text-sm shadow transition-colors flex items-center space-x-2"
+            className="bg-slate-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 sm:px-5 rounded-xl text-sm shadow transition-colors flex items-center space-x-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
             </svg>
-            <span>Add New Customer</span>
+            <span className="hidden sm:inline">Add New Customer</span>
+            <span className="sm:hidden">Add</span>
           </button>
         </div>
       </div>
@@ -1071,8 +1072,8 @@ export default function Customers() {
                 key={page}
                 onClick={() => setCurrentPage(page)}
                 className={`w-9 h-9 rounded-xl text-xs font-bold transition-all ${currentPage === page
-                    ? 'bg-slate-600 text-white shadow-xs'
-                    : 'bg-white hover:bg-slate-50 text-slate-600 border border-slate-200'
+                  ? 'bg-slate-600 text-white shadow-xs'
+                  : 'bg-white hover:bg-slate-50 text-slate-600 border border-slate-200'
                   }`}
               >
                 {page}
@@ -1362,7 +1363,7 @@ export default function Customers() {
       {showHistoryModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
           <div className="bg-white rounded-2xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl flex flex-col max-h-[90vh]">
-            
+
             {/* Header Top Row */}
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <div>
@@ -1556,10 +1557,10 @@ export default function Customers() {
 
               return (
                 <div className={`mt-3 rounded-xl p-3.5 border flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 ${currentDue > 0
-                    ? 'bg-rose-50/70 border-rose-200'
-                    : 'bg-emerald-50/70 border-emerald-200'
+                  ? 'bg-rose-50/70 border-rose-200'
+                  : 'bg-emerald-50/70 border-emerald-200'
                   }`}>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 flex-1">
                     {/* Outstanding Due */}
                     <div className="flex items-center space-x-3 bg-white/80 p-3 rounded-xl border border-slate-100 shadow-2xs">
                       <div className={`p-2.5 rounded-lg shrink-0 ${currentDue > 0 ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}`}>
@@ -1596,7 +1597,7 @@ export default function Customers() {
                     </div>
 
                     {/* Total Collect */}
-                    <div className="flex items-center space-x-3 bg-white/80 p-3 rounded-xl border border-slate-100 shadow-2xs">
+                    <div className="flex items-center space-x-3 bg-white/80 p-3 rounded-xl border border-slate-100 shadow-2xs col-span-2 sm:col-span-1">
                       <div className="p-2.5 rounded-lg bg-emerald-100 text-emerald-600 shrink-0">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -1640,7 +1641,7 @@ export default function Customers() {
                   const searchTerm = (historyProductSearch || '').trim().toLowerCase();
                   const start = historyStartDate ? new Date(historyStartDate) : null;
                   const end = historyEndDate ? new Date(historyEndDate) : null;
-                  if (end) end.setHours(23,59,59,999);
+                  if (end) end.setHours(23, 59, 59, 999);
 
                   const filtered = historySales.filter(sale => {
                     const saleDate = new Date(sale.created_at);
@@ -2163,8 +2164,8 @@ export default function Customers() {
 
             {/* Outstanding Amount & Collection Metrics Display */}
             {(() => {
-              const dueCollectPayments = (historySales || []).filter(sale => 
-                (sale.sale_id && String(sale.sale_id).startsWith('pay-')) || 
+              const dueCollectPayments = (historySales || []).filter(sale =>
+                (sale.sale_id && String(sale.sale_id).startsWith('pay-')) ||
                 (sale.items && sale.items.length === 0 && parseFloat(sale.total_amount || 0) === 0 && parseFloat(sale.final_amount || 0) > 0)
               );
 
@@ -2181,7 +2182,7 @@ export default function Customers() {
                 : parseFloat(historyCustomer?.total_collect_amount || 0);
 
               return (
-                <div className="mt-4 grid grid-cols-3 gap-2">
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
                   <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-center">
                     <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider">Outstanding Due</p>
                     <p className="text-base font-extrabold text-rose-700 mt-0.5">৳{parseFloat(historyCustomer.due_balance || 0).toFixed(2)}</p>
@@ -2195,7 +2196,7 @@ export default function Customers() {
                       </p>
                     )}
                   </div>
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-center">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-center col-span-2 sm:col-span-1">
                     <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Total Collected</p>
                     <p className="text-base font-extrabold text-emerald-800 mt-0.5">৳{totalCollectAmount.toFixed(2)}</p>
                   </div>
@@ -2248,8 +2249,8 @@ export default function Customers() {
                       type="button"
                       onClick={() => setDuePayMethod(method)}
                       className={`py-2 px-2 rounded-lg text-xs font-semibold border text-center transition-all ${duePayMethod === method
-                          ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
-                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                        ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
+                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
                         }`}
                     >
                       {method === 'mobile_pay' ? 'Mobile' : method.charAt(0).toUpperCase() + method.slice(1)}
@@ -2332,7 +2333,7 @@ export default function Customers() {
               const searchTerm = (historyProductSearch || '').trim().toLowerCase();
               const start = historyStartDate ? new Date(historyStartDate) : null;
               const end = historyEndDate ? new Date(historyEndDate) : null;
-              if (end) end.setHours(23,59,59,999);
+              if (end) end.setHours(23, 59, 59, 999);
 
               const filtered = historySales.filter(sale => {
                 const saleDate = new Date(sale.created_at);
@@ -2441,7 +2442,7 @@ export default function Customers() {
               const searchTerm = (historyProductSearch || '').trim().toLowerCase();
               const start = historyStartDate ? new Date(historyStartDate) : null;
               const end = historyEndDate ? new Date(historyEndDate) : null;
-              if (end) end.setHours(23,59,59,999);
+              if (end) end.setHours(23, 59, 59, 999);
 
               const filtered = historySales.filter(sale => {
                 const saleDate = new Date(sale.created_at);
@@ -2469,75 +2470,75 @@ export default function Customers() {
                     <div style={{ spaceY: '20px' }}>
                       {filtered.map((sale) => (
                         <div key={sale.sale_id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', marginBottom: '16px', pageBreakInside: 'avoid' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px', marginBottom: '8px', fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>
-                      <span>Transaction #{sale.sale_id} - {new Date(sale.created_at).toLocaleString()}</span>
-                      <span>Method: {sale.payment_method.toUpperCase()}</span>
-                    </div>
-
-                    {sale.items.length === 0 ? (
-                      <div style={{ padding: '8px 0', fontSize: '13px', fontWeight: '600', color: '#059669' }}>✓ Due Balance Payment Collected — ৳{parseFloat(sale.final_amount).toFixed(2)}</div>
-                    ) : (
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                        <thead>
-                          <tr style={{ borderBottom: '1px solid #e2e8f0', color: '#64748b', textAlign: 'left' }}>
-                            <th style={{ paddingBottom: '4px' }}>Purchased Product</th>
-                            <th style={{ paddingBottom: '4px', textAlign: 'center' }}>Qty</th>
-                            <th style={{ paddingBottom: '4px', textAlign: 'right' }}>Unit Price</th>
-                            <th style={{ paddingBottom: '4px', textAlign: 'right' }}>Subtotal</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {sale.items.map((item) => (
-                            <tr key={item.item_id} style={{ borderBottom: '1px solid #f8fafc' }}>
-                              <td style={{ padding: '6px 0' }}>{item.product_name}</td>
-                              <td style={{ padding: '6px 0', textAlign: 'center' }}>{item.quantity}</td>
-                              <td style={{ padding: '6px 0', textAlign: 'right' }}>৳{parseFloat(item.unit_price).toFixed(2)}</td>
-                              <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: '600' }}>৳{parseFloat(item.subtotal).toFixed(2)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px', fontSize: '11px', color: '#64748b' }}>
-                      <div style={{ width: '200px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span>Subtotal:</span>
-                          <span>৳{parseFloat(sale.total_amount).toFixed(2)}</span>
-                        </div>
-                        {parseFloat(sale.discount) > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ef4444' }}>
-                            <span>Discount:</span>
-                            <span>-৳{parseFloat(sale.discount).toFixed(2)}</span>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px', marginBottom: '8px', fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>
+                            <span>Transaction #{sale.sale_id} - {new Date(sale.created_at).toLocaleString()}</span>
+                            <span>Method: {sale.payment_method.toUpperCase()}</span>
                           </div>
-                        )}
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span>Tax:</span>
-                          <span>৳{parseFloat(sale.tax).toFixed(2)}</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b' }}>
-                          <span>Final Total:</span>
-                          <span>৳{parseFloat(sale.final_amount).toFixed(2)}</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 'bold', color: '#1e293b', borderTop: '1px solid #e2e8f0', marginTop: '4px', paddingTop: '2px' }}>
-                          <span>Total Paid:</span>
-                          <span>৳{parseFloat(sale.paid_amount !== undefined ? sale.paid_amount : sale.final_amount).toFixed(2)}</span>
-                        </div>
-                        {parseFloat(sale.due_amount || 0) > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 'bold', color: '#ef4444' }}>
-                            <span>Due Balance:</span>
-                            <span>৳{parseFloat(sale.due_amount).toFixed(2)}</span>
+
+                          {sale.items.length === 0 ? (
+                            <div style={{ padding: '8px 0', fontSize: '13px', fontWeight: '600', color: '#059669' }}>✓ Due Balance Payment Collected — ৳{parseFloat(sale.final_amount).toFixed(2)}</div>
+                          ) : (
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                              <thead>
+                                <tr style={{ borderBottom: '1px solid #e2e8f0', color: '#64748b', textAlign: 'left' }}>
+                                  <th style={{ paddingBottom: '4px' }}>Purchased Product</th>
+                                  <th style={{ paddingBottom: '4px', textAlign: 'center' }}>Qty</th>
+                                  <th style={{ paddingBottom: '4px', textAlign: 'right' }}>Unit Price</th>
+                                  <th style={{ paddingBottom: '4px', textAlign: 'right' }}>Subtotal</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {sale.items.map((item) => (
+                                  <tr key={item.item_id} style={{ borderBottom: '1px solid #f8fafc' }}>
+                                    <td style={{ padding: '6px 0' }}>{item.product_name}</td>
+                                    <td style={{ padding: '6px 0', textAlign: 'center' }}>{item.quantity}</td>
+                                    <td style={{ padding: '6px 0', textAlign: 'right' }}>৳{parseFloat(item.unit_price).toFixed(2)}</td>
+                                    <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: '600' }}>৳{parseFloat(item.subtotal).toFixed(2)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          )}
+
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px', fontSize: '11px', color: '#64748b' }}>
+                            <div style={{ width: '200px' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>Subtotal:</span>
+                                <span>৳{parseFloat(sale.total_amount).toFixed(2)}</span>
+                              </div>
+                              {parseFloat(sale.discount) > 0 && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ef4444' }}>
+                                  <span>Discount:</span>
+                                  <span>-৳{parseFloat(sale.discount).toFixed(2)}</span>
+                                </div>
+                              )}
+                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>Tax:</span>
+                                <span>৳{parseFloat(sale.tax).toFixed(2)}</span>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b' }}>
+                                <span>Final Total:</span>
+                                <span>৳{parseFloat(sale.final_amount).toFixed(2)}</span>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 'bold', color: '#1e293b', borderTop: '1px solid #e2e8f0', marginTop: '4px', paddingTop: '2px' }}>
+                                <span>Total Paid:</span>
+                                <span>৳{parseFloat(sale.paid_amount !== undefined ? sale.paid_amount : sale.final_amount).toFixed(2)}</span>
+                              </div>
+                              {parseFloat(sale.due_amount || 0) > 0 && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 'bold', color: '#ef4444' }}>
+                                  <span>Due Balance:</span>
+                                  <span>৳{parseFloat(sale.due_amount).toFixed(2)}</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-          )
-        })()}
+                  )}
+                </>
+              )
+            })()}
 
             {/* Report Footer */}
             <div style={{ borderTop: '2px solid #cbd5e1', paddingTop: '10px', marginTop: '30px', textAlign: 'center', color: '#94a3b8', fontSize: '11px' }}>
