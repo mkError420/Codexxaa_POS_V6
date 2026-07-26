@@ -482,7 +482,7 @@ export default function Inventory() {
               <>
                 <button
                   onClick={() => setShowCsvUploadModal(true)}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm shadow-xs transition-colors flex items-center space-x-2"
+                  className="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm shadow-xs transition-colors flex items-center space-x-2"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -555,7 +555,7 @@ export default function Inventory() {
                 {selectedLetter && (
                   <button
                     onClick={() => { setSelectedLetter(''); setCurrentPage(1); }}
-                    className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors flex items-center space-x-1"
+                    className="text-xs font-bold text-yellow-600 hover:text-yellow-800 transition-colors flex items-center space-x-1"
                   >
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -590,7 +590,7 @@ export default function Inventory() {
                     >
                       <span>{letter}</span>
                       {count > 0 && (
-                        <span className={`text-[8px] px-1 py-0.25 rounded-full ${isSelected ? 'bg-indigo-500 text-white' : 'bg-indigo-100 text-indigo-800 font-semibold'
+                        <span className={`text-[8px] px-1 py-0.25 rounded-full ${isSelected ? 'bg-indigo-500 text-white' : 'bg-yellow-600 text-black font-semibold'
                           }`}>
                           {count}
                         </span>
@@ -1137,17 +1137,25 @@ export default function Inventory() {
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Unit *</label>
-                      <select
+                      <input
+                        list="unit-options-add"
+                        type="text"
                         name="unit"
                         value={formData.unit}
                         onChange={handleInputChange}
+                        placeholder="e.g. piece, kg, box"
                         className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-medium"
-                      >
-                        <option value="piece">Piece</option>
-                        <option value="kg">kg</option>
-                        <option value="gm">gm</option>
-                        <option value="liter">Liter</option>
-                      </select>
+                      />
+                      <datalist id="unit-options-add">
+                        <option value="piece" />
+                        <option value="kg" />
+                        <option value="gm" />
+                        <option value="liter" />
+                        <option value="packet" />
+                        <option value="box" />
+                        <option value="dozen" />
+                        <option value="meter" />
+                      </datalist>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Low Stock ({formData.unit || 'piece'})</label>
@@ -1306,17 +1314,25 @@ export default function Inventory() {
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Unit *</label>
-                      <select
+                      <input
+                        list="unit-options-edit"
+                        type="text"
                         name="unit"
                         value={formData.unit}
                         onChange={handleInputChange}
+                        placeholder="e.g. piece, kg, box"
                         className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:ring-1 focus:ring-indigo-500 outline-none bg-white font-medium"
-                      >
-                        <option value="piece">Piece</option>
-                        <option value="kg">kg</option>
-                        <option value="gm">gm</option>
-                        <option value="liter">Liter</option>
-                      </select>
+                      />
+                      <datalist id="unit-options-edit">
+                        <option value="piece" />
+                        <option value="kg" />
+                        <option value="gm" />
+                        <option value="liter" />
+                        <option value="packet" />
+                        <option value="box" />
+                        <option value="dozen" />
+                        <option value="meter" />
+                      </datalist>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Low Stock ({formData.unit || 'piece'})</label>
