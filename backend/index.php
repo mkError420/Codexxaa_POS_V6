@@ -293,9 +293,12 @@ $routes = [
         // Plan Purchases
         '/^plan-purchases$/' => function() { OtherController::listPlanPurchases(); },
         // Payment Methods (public endpoint for purchase modal)
+        '/^payment-methods$/' => function() { OtherController::listPaymentMethods(); },
         '/^payment-methods\/active$/' => function() { OtherController::getActivePaymentMethods(); },
     ],
     'POST' => [
+        // File Uploads (public - no auth required for plan purchase proof)
+        '/^upload\/payment-proof$/' => function($args, $data) { OtherController::uploadPaymentProof(); },
         // Auth
         '/^auth\/login$/' => function($args, $data) { AuthController::login($data); },
         '/^auth\/register-shop$/' => function($args, $data) { AuthController::registerShop($data); },
@@ -383,7 +386,6 @@ $routes = [
         // Plan Purchases
         '/^plan-purchases\/(\d+)$/' => function($args, $data) { OtherController::updatePlanPurchase($args[0], $data); },
         // Payment Methods
-        '/^payment-methods$/' => function($args, $data) { OtherController::listPaymentMethods(); },
         '/^payment-methods\/(\d+)$/' => function($args, $data) { OtherController::updatePaymentMethod($args[0], $data); },
         // Site Settings
         '/^settings\/site$/' => function($args, $data) { OtherController::updateSiteSettings($data); },

@@ -1,0 +1,19 @@
+# Allow access to uploaded payment proof images
+Options -Indexes
+
+# Allow CORS for images loaded by the frontend
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+</IfModule>
+
+# Only allow image file types
+<FilesMatch "(?i)\.(jpg|jpeg|png|gif|webp)$">
+    Order allow,deny
+    Allow from all
+</FilesMatch>
+
+# Deny everything else
+<FilesMatch "(?!.*\.(jpg|jpeg|png|gif|webp)$).*">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

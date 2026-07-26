@@ -38,6 +38,10 @@ export default function Home({ onLoginSuccess }) {
     card_last_four: '',
     payment_proof: ''
   });
+  const [paymentProofFile, setPaymentProofFile] = useState(null);
+  const [paymentProofPreview, setPaymentProofPreview] = useState('');
+  const [uploadingProof, setUploadingProof] = useState(false);
+  const [proofUploadError, setProofUploadError] = useState('');
 
   const scrollToSection = (sectionId) => {
     setActiveSection(sectionId);
@@ -163,6 +167,9 @@ export default function Home({ onLoginSuccess }) {
       card_last_four: '',
       payment_proof: ''
     });
+    setPaymentProofFile(null);
+    setPaymentProofPreview('');
+    setProofUploadError('');
   };
 
   const handleProceedToPayment = (e) => {
@@ -180,6 +187,48 @@ export default function Home({ onLoginSuccess }) {
     setSelectedPaymentMethod(method);
     setShowPaymentStep(true);
     setPurchaseError('');
+  };
+
+  const uploadPaymentProofImage = async (file) => {
+    setUploadingProof(true);
+    setProofUploadError('');
+    try {
+      const formData = new FormData();
+      formData.append('payment_proof', file);
+      const res = await fetch(`${API_BASE_URL}/upload/payment-proof`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        setPaymentDetails(prev => ({ ...prev, payment_proof: data.url }));
+        return data.url;
+      } else {
+        setProofUploadError(data.error || 'Failed to upload image.');
+        return null;
+      }
+    } catch (err) {
+      setProofUploadError('Network error uploading image.');
+      return null;
+    } finally {
+      setUploadingProof(false);
+    }
+  };
+
+  const handleProofFileChange = async (file) => {
+    if (!file) return;
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jpg'];
+    if (!validTypes.includes(file.type)) {
+      setProofUploadError('Only JPEG, PNG, GIF, or WebP images are allowed.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setProofUploadError('File must be under 5MB.');
+      return;
+    }
+    setPaymentProofFile(file);
+    setPaymentProofPreview(URL.createObjectURL(file));
+    await uploadPaymentProofImage(file);
   };
 
   const handlePurchaseSubmit = async (e) => {
@@ -775,14 +824,72 @@ export default function Home({ onLoginSuccess }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Payment Proof (Screenshot URL)</label>
-                  <input
-                    type="text"
-                    value={paymentDetails.payment_proof}
-                    onChange={(e) => setPaymentDetails({...paymentDetails, payment_proof: e.target.value})}
-                    className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Paste screenshot URL (optional)"
-                  />
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Payment Proof (Screenshot)</label>
+                  <div
+                    className={`relative border-2 border-dashed rounded-xl p-4 transition-colors cursor-pointer ${
+                      uploadingProof
+                        ? 'border-indigo-500 bg-indigo-900/20'
+                        : paymentProofPreview
+                        ? 'border-emerald-500 bg-emerald-900/10'
+                        : 'border-slate-600 bg-slate-700/30 hover:border-indigo-500 hover:bg-slate-700/50'
+                    }`}
+                    onDragOver={(e) => { e.preventDefault(); }}
+                    onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files[0]; if (file) handleProofFileChange(file); }}
+                    onClick={() => document.getElementById('payment-proof-input').click()}
+                  >
+                    <input
+                      id="payment-proof-input"
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      className="hidden"
+                      onChange={(e) => { if (e.target.files[0]) handleProofFileChange(e.target.files[0]); }}
+                    />
+                    {uploadingProof ? (
+                      <div className="flex flex-col items-center justify-center py-4 gap-2">
+                        <svg className="animate-spin w-8 h-8 text-indigo-400" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        <span className="text-indigo-300 text-xs font-medium">Uploading image…</span>
+                      </div>
+                    ) : paymentProofPreview ? (
+                      <div className="space-y-3">
+                        <img
+                          src={paymentProofPreview}
+                          alt="Payment proof preview"
+                          className="w-full max-h-40 object-contain rounded-lg border border-slate-600"
+                        />
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span className="text-emerald-300 text-xs font-medium">Uploaded successfully</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setPaymentProofFile(null); setPaymentProofPreview(''); setPaymentDetails(p => ({...p, payment_proof: ''})); setProofUploadError(''); }}
+                            className="text-slate-400 hover:text-rose-400 text-xs underline transition-colors"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-4 gap-2 pointer-events-none">
+                        <svg className="w-10 h-10 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <p className="text-slate-400 text-xs text-center">
+                          <span className="text-indigo-400 font-semibold">Click to upload</span> or drag &amp; drop
+                        </p>
+                        <p className="text-slate-500 text-xs">JPEG, PNG, GIF, WebP &bull; Max 5MB</p>
+                      </div>
+                    )}
+                  </div>
+                  {proofUploadError && (
+                    <p className="mt-1.5 text-rose-400 text-xs">{proofUploadError}</p>
+                  )}
                 </div>
 
                 <div className="flex gap-3">

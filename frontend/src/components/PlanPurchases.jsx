@@ -179,6 +179,7 @@ export default function PlanPurchases() {
                 <th className="px-4 py-3">Transaction ID</th>
                 <th className="px-4 py-3">Payment</th>
                 <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Proof</th>
                 <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3 text-center">Actions</th>
               </tr>
@@ -186,7 +187,7 @@ export default function PlanPurchases() {
             <tbody className="divide-y divide-slate-100 text-sm">
               {loading ? (
                 <tr>
-                  <td colSpan="9" className="p-12 text-center">
+                  <td colSpan="10" className="p-12 text-center">
                     <div className="flex flex-col items-center gap-3 text-slate-400">
                       <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600" />
                       <span className="text-sm">Loading purchases…</span>
@@ -195,7 +196,7 @@ export default function PlanPurchases() {
                 </tr>
               ) : purchases.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="p-12 text-center">
+                  <td colSpan="10" className="p-12 text-center">
                     <div className="flex flex-col items-center gap-2 text-slate-400">
                       <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -238,6 +239,34 @@ export default function PlanPurchases() {
                       </span>
                     </td>
                     <td className="px-4 py-3.5">{getStatusBadge(purchase.status)}</td>
+                    <td className="px-4 py-3.5">
+                      {purchase.payment_proof ? (
+                        <a
+                          href={purchase.payment_proof}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="View payment proof"
+                          className="block group"
+                        >
+                          <div className="relative w-12 h-10 rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
+                            <img
+                              src={purchase.payment_proof}
+                              alt="Proof"
+                              className="w-full h-full object-cover group-hover:opacity-80 transition-opacity"
+                              onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }}
+                            />
+                            <div style={{display:'none'}} className="absolute inset-0 flex items-center justify-center bg-slate-100">
+                              <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01" />
+                              </svg>
+                            </div>
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg" />
+                          </div>
+                        </a>
+                      ) : (
+                        <span className="text-slate-300 text-xs">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3.5 text-slate-500">
                       {new Date(purchase.purchase_date).toLocaleDateString()}
                     </td>
@@ -324,9 +353,41 @@ export default function PlanPurchases() {
                   )}
                   {selectedPurchase.payment_proof && (
                     <div className="pt-2">
-                      <span className="text-slate-600 block mb-1">Payment Proof:</span>
-                      <a href={selectedPurchase.payment_proof} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800 text-xs underline">
-                        View Screenshot
+                      <span className="text-slate-600 block mb-2 text-xs font-semibold uppercase tracking-wider">Payment Proof:</span>
+                      <a
+                        href={selectedPurchase.payment_proof}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block group"
+                        title="Click to view full size"
+                      >
+                        <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                          <img
+                            src={selectedPurchase.payment_proof}
+                            alt="Payment proof"
+                            className="w-full max-h-48 object-contain group-hover:opacity-90 transition-opacity"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                          <div
+                            style={{ display: 'none' }}
+                            className="flex-col items-center justify-center p-4 text-slate-400 gap-2"
+                          >
+                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                            </svg>
+                            <a href={selectedPurchase.payment_proof} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800 text-xs underline">
+                              View Proof File
+                            </a>
+                          </div>
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30 rounded-xl">
+                            <span className="bg-white/90 text-slate-800 text-xs font-semibold px-3 py-1 rounded-full shadow">
+                              View Full Size ↗
+                            </span>
+                          </div>
+                        </div>
                       </a>
                     </div>
                   )}

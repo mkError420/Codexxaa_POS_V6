@@ -236,6 +236,112 @@ class OtherController {
     }
 
     // ==========================================
+    // FILE UPLOADS
+    // ==========================================
+
+    public static function uploadPaymentProof() {
+        // Public endpoint - no auth required (used from purchase form before login)
+        try {
+            if (!isset($_FILES['payment_proof'])) {
+                header('Content-Type: application/json');
+                http_response_code(400);
+                echo json_encode(['error' => 'No file uploaded. Field name must be "payment_proof".']);
+                return;
+            }
+
+            $file = $_FILES['payment_proof'];
+
+            if ($file['error'] !== UPLOAD_ERR_OK) {
+                $errorMessages = [
+                    UPLOAD_ERR_INI_SIZE   => 'File exceeds server upload limit.',
+                    UPLOAD_ERR_FORM_SIZE  => 'File exceeds form size limit.',
+                    UPLOAD_ERR_PARTIAL    => 'File was only partially uploaded.',
+                    UPLOAD_ERR_NO_FILE    => 'No file was uploaded.',
+                    UPLOAD_ERR_NO_TMP_DIR => 'Missing a temporary folder.',
+                    UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk.',
+                    UPLOAD_ERR_EXTENSION  => 'A PHP extension stopped the file upload.',
+                ];
+                $msg = $errorMessages[$file['error']] ?? 'Unknown upload error.';
+                header('Content-Type: application/json');
+                http_response_code(400);
+                echo json_encode(['error' => $msg]);
+                return;
+            }
+
+            // Validate file type (images only)
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jpg'];
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mimeType = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+
+            if (!in_array($mimeType, $allowedMimes)) {
+                header('Content-Type: application/json');
+                http_response_code(400);
+                echo json_encode(['error' => 'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.']);
+                return;
+            }
+
+            // Max 5MB
+            if ($file['size'] > 5 * 1024 * 1024) {
+                header('Content-Type: application/json');
+                http_response_code(400);
+                echo json_encode(['error' => 'File size exceeds 5MB limit.']);
+                return;
+            }
+
+            // Determine upload directory
+            $uploadDir = __DIR__ . '/../../backend/uploads/payment-proofs/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            // Generate unique filename
+            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            if (!in_array(strtolower($ext), $allowedExts)) {
+                $ext = 'jpg'; // Default fallback
+            }
+            $filename = 'proof_' . date('Ymd_His') . '_' . bin2hex(random_bytes(6)) . '.' . strtolower($ext);
+            $destination = $uploadDir . $filename;
+
+            if (!move_uploaded_file($file['tmp_name'], $destination)) {
+                header('Content-Type: application/json');
+                http_response_code(500);
+                echo json_encode(['error' => 'Failed to save uploaded file. Check server permissions.']);
+                return;
+            }
+
+            // Build the public URL
+            $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
+            $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+            // Determine base path (strip /api or /backend/api from request URI)
+            $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+            // Strip the route part to get base URL
+            $basePath = '';
+            if (strpos($requestUri, '/backend/') !== false) {
+                $basePath = substr($requestUri, 0, strpos($requestUri, '/backend/') + 1);
+            } elseif (strpos($requestUri, '/api/') !== false) {
+                $basePath = substr($requestUri, 0, strpos($requestUri, '/api/') + 1);
+            }
+            $fileUrl = $protocol . '://' . $host . $basePath . 'backend/uploads/payment-proofs/' . $filename;
+
+            header('Content-Type: application/json');
+            http_response_code(201);
+            echo json_encode([
+                'message' => 'Payment proof uploaded successfully.',
+                'url' => $fileUrl,
+                'filename' => $filename
+            ]);
+
+        } catch (\Exception $e) {
+            error_log('Upload payment proof error: ' . $e->getMessage());
+            header('Content-Type: application/json');
+            http_response_code(500);
+            echo json_encode(['error' => 'Server error uploading file: ' . $e->getMessage()]);
+        }
+    }
+
+    // ==========================================
     // PLAN PURCHASES
     // ==========================================
 
@@ -537,19 +643,19 @@ class OtherController {
         }
 
         $type = $requestData['type'] ?? null;
-        $name = $requestData['name'] ?? null;
-        $phoneNumber = $requestData['phone_number'] ?? null;
-        $accountNumber = $requestData['account_number'] ?? null;
-        $accountHolder = $requestData['account_holder'] ?? null;
-        $branchName = $requestData['branch_name'] ?? null;
-        $routingNumber = $requestData['routing_number'] ?? null;
+        $name = trim($requestData['name'] ?? '');
+        $phoneNumber = !empty($requestData['phone_number']) ? trim($requestData['phone_number']) : null;
+        $accountNumber = !empty($requestData['account_number']) ? trim($requestData['account_number']) : null;
+        $accountHolder = !empty($requestData['account_holder']) ? trim($requestData['account_holder']) : null;
+        $branchName = !empty($requestData['branch_name']) ? trim($requestData['branch_name']) : null;
+        $routingNumber = !empty($requestData['routing_number']) ? trim($requestData['routing_number']) : null;
         $isActive = isset($requestData['is_active']) ? ($requestData['is_active'] ? 1 : 0) : 1;
-        $sortOrder = $requestData['sort_order'] ?? 0;
+        $sortOrder = isset($requestData['sort_order']) ? (int)$requestData['sort_order'] : 0;
 
         if (empty($type) || empty($name)) {
             header('Content-Type: application/json');
             http_response_code(400);
-            echo json_encode(['error' => 'type and name are required.']);
+            echo json_encode(['error' => 'Payment method Type and Name are required.']);
             return;
         }
 
@@ -566,7 +672,7 @@ class OtherController {
                     $branchName,
                     $routingNumber,
                     $isActive,
-                    (int)$sortOrder
+                    $sortOrder
                 ]
             );
 
@@ -603,14 +709,21 @@ class OtherController {
             }
 
             $type = $requestData['type'] ?? $method['type'];
-            $name = $requestData['name'] ?? $method['name'];
-            $phoneNumber = $requestData['phone_number'] ?? $method['phone_number'];
-            $accountNumber = $requestData['account_number'] ?? $method['account_number'];
-            $accountHolder = $requestData['account_holder'] ?? $method['account_holder'];
-            $branchName = $requestData['branch_name'] ?? $method['branch_name'];
-            $routingNumber = $requestData['routing_number'] ?? $method['routing_number'];
-            $isActive = $requestData['is_active'] ?? $method['is_active'];
-            $sortOrder = $requestData['sort_order'] ?? $method['sort_order'];
+            $name = isset($requestData['name']) ? trim($requestData['name']) : $method['name'];
+            $phoneNumber = array_key_exists('phone_number', $requestData) ? (!empty($requestData['phone_number']) ? trim($requestData['phone_number']) : null) : $method['phone_number'];
+            $accountNumber = array_key_exists('account_number', $requestData) ? (!empty($requestData['account_number']) ? trim($requestData['account_number']) : null) : $method['account_number'];
+            $accountHolder = array_key_exists('account_holder', $requestData) ? (!empty($requestData['account_holder']) ? trim($requestData['account_holder']) : null) : $method['account_holder'];
+            $branchName = array_key_exists('branch_name', $requestData) ? (!empty($requestData['branch_name']) ? trim($requestData['branch_name']) : null) : $method['branch_name'];
+            $routingNumber = array_key_exists('routing_number', $requestData) ? (!empty($requestData['routing_number']) ? trim($requestData['routing_number']) : null) : $method['routing_number'];
+            $isActive = array_key_exists('is_active', $requestData) ? ($requestData['is_active'] ? 1 : 0) : (int)$method['is_active'];
+            $sortOrder = array_key_exists('sort_order', $requestData) ? (int)$requestData['sort_order'] : (int)$method['sort_order'];
+
+            if (empty($type) || empty($name)) {
+                header('Content-Type: application/json');
+                http_response_code(400);
+                echo json_encode(['error' => 'Payment method Type and Name are required.']);
+                return;
+            }
 
             DB::query(
                 'UPDATE payment_methods SET type = ?, name = ?, phone_number = ?, account_number = ?, account_holder = ?, branch_name = ?, routing_number = ?, is_active = ?, sort_order = ? WHERE id = ?',
@@ -622,8 +735,8 @@ class OtherController {
                     $accountHolder,
                     $branchName,
                     $routingNumber,
-                    (int)$isActive,
-                    (int)$sortOrder,
+                    $isActive,
+                    $sortOrder,
                     $methodId
                 ]
             );
@@ -633,7 +746,7 @@ class OtherController {
 
         } catch (\Exception $e) {
             error_log('Update payment method error: ' . $e->getMessage());
-            Auth::jsonError('Server error updating payment method.', 500);
+            Auth::jsonError('Server error updating payment method: ' . $e->getMessage(), 500);
         }
     }
 
