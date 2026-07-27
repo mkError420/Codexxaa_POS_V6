@@ -1729,6 +1729,12 @@ class OtherController {
                 if (!empty($purchase['payment_method_name'])) {
                     $purchase['payment_method'] = $purchase['payment_method_name'];
                 }
+                // Include shop registration fields if they exist
+                $purchase['shop_name'] = $purchase['shop_name'] ?? null;
+                $purchase['shop_address'] = $purchase['shop_address'] ?? null;
+                $purchase['shop_phone'] = $purchase['shop_phone'] ?? null;
+                $purchase['shop_city'] = $purchase['shop_city'] ?? null;
+                $purchase['shop_country'] = $purchase['shop_country'] ?? null;
             }
 
             header('Content-Type: application/json');
@@ -1754,6 +1760,14 @@ class OtherController {
         $accountNumber = $requestData['account_number'] ?? '';
         $cardLastFour = $requestData['card_last_four'] ?? '';
         $paymentProof = $requestData['payment_proof'] ?? '';
+        $paymentDate = $requestData['payment_date'] ?? null;
+        
+        // Shop registration fields
+        $shopName = $requestData['shop_name'] ?? '';
+        $shopAddress = $requestData['shop_address'] ?? '';
+        $shopPhone = $requestData['shop_phone'] ?? '';
+        $shopCity = $requestData['shop_city'] ?? '';
+        $shopCountry = $requestData['shop_country'] ?? '';
 
         if (empty($planId) || empty($userName) || empty($userEmail)) {
             header('Content-Type: application/json');
@@ -1764,9 +1778,9 @@ class OtherController {
 
         try {
             DB::query(
-                'INSERT INTO plan_purchases (plan_id, user_name, user_email, user_phone, payment_method, payment_method_id, notes, transaction_id, bank_name, account_number, card_last_four, payment_proof) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [$planId, $userName, $userEmail, $userPhone, $paymentMethod, $paymentMethodId, $notes, $transactionId, $bankName, $accountNumber, $cardLastFour, $paymentProof]
+                'INSERT INTO plan_purchases (plan_id, user_name, user_email, user_phone, payment_method, payment_method_id, notes, transaction_id, bank_name, account_number, card_last_four, payment_proof, payment_date, shop_name, shop_address, shop_phone, shop_city, shop_country) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [$planId, $userName, $userEmail, $userPhone, $paymentMethod, $paymentMethodId, $notes, $transactionId, $bankName, $accountNumber, $cardLastFour, $paymentProof, $paymentDate, $shopName, $shopAddress, $shopPhone, $shopCity, $shopCountry]
             );
             $newId = DB::lastInsertId();
 

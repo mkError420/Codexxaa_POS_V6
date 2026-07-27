@@ -38,10 +38,13 @@ export default function PlanPurchases() {
       if (response.ok) {
         const data = await response.json();
         setPurchases(data);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to load plan purchases (${response.status})`);
       }
     } catch (err) {
       console.error('Failed to fetch plan purchases:', err);
-      triggerAlert('error', 'Failed to load plan purchases');
+      triggerAlert('error', err.message || 'Failed to load plan purchases');
     } finally {
       setLoading(false);
     }
@@ -55,6 +58,9 @@ export default function PlanPurchases() {
       if (response.ok) {
         const data = await response.json();
         setShops(data);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to fetch shops:', errorData.error || response.status);
       }
     } catch (err) {
       console.error('Failed to fetch shops:', err);
@@ -134,14 +140,14 @@ export default function PlanPurchases() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create shop');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to create shop (${response.status})`);
       }
 
       const result = await response.json();
       
       // Link the purchase to the newly created shop
-      await fetch(`${API_BASE_URL}/plan-purchases/${selectedPurchase.id}`, {
+      const linkResponse = await fetch(`${API_BASE_URL}/plan-purchases/${selectedPurchase.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -154,12 +160,18 @@ export default function PlanPurchases() {
         })
       });
 
+      if (!linkResponse.ok) {
+        const errorData = await linkResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to link shop to purchase (${linkResponse.status})`);
+      }
+
       triggerAlert('success', 'Shop created successfully and linked to purchase!');
       setShowShopModal(false);
       fetchShops();
       fetchPurchases();
     } catch (err) {
-      triggerAlert('error', err.message);
+      console.error('Failed to create shop:', err);
+      triggerAlert('error', err.message || 'Failed to create shop');
     }
   };
 
@@ -175,13 +187,15 @@ export default function PlanPurchases() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update status');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to update status (${response.status})`);
       }
 
       triggerAlert('success', 'Status updated successfully!');
       fetchPurchases();
     } catch (err) {
-      triggerAlert('error', err.message);
+      console.error('Failed to update status:', err);
+      triggerAlert('error', err.message || 'Failed to update status');
     }
   };
 
@@ -198,14 +212,16 @@ export default function PlanPurchases() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update purchase');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to update purchase (${response.status})`);
       }
 
       triggerAlert('success', 'Plan purchase updated successfully!');
       setShowEditModal(false);
       fetchPurchases();
     } catch (err) {
-      triggerAlert('error', err.message);
+      console.error('Failed to update purchase:', err);
+      triggerAlert('error', err.message || 'Failed to update purchase');
     }
   };
 
@@ -219,13 +235,15 @@ export default function PlanPurchases() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete purchase');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to delete purchase (${response.status})`);
       }
 
       triggerAlert('success', 'Plan purchase deleted successfully!');
       fetchPurchases();
     } catch (err) {
-      triggerAlert('error', err.message);
+      console.error('Failed to delete purchase:', err);
+      triggerAlert('error', err.message || 'Failed to delete purchase');
     }
   };
 
@@ -307,7 +325,7 @@ export default function PlanPurchases() {
                 <th className="px-4 py-3">ID</th>
                 <th className="px-4 py-3">Plan</th>
                 <th className="px-4 py-3">Customer</th>
-                <th className="px-4 py-3">Shop</th>
+                <th className="px-4 py-3">Shop Details</th>
                 <th className="px-4 py-3">Amount</th>
                 <th className="px-4 py-3">Transaction ID</th>
                 <th className="px-4 py-3">Payment</th>
@@ -355,7 +373,25 @@ export default function PlanPurchases() {
                       </div>
                     </td>
                     <td className="px-4 py-3.5">
-                      {purchase.shop_id ? (
+                      {purchase.shop_name ? (
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1">
+                            <svg className="w-3 h-3 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <span className="font-medium text-slate-800 text-xs">{purchase.shop_name}</span>
+                          </div>
+                          {purchase.shop_address && (
+                            <p className="text-xs text-slate-500 truncate max-w-[150px]" title={purchase.shop_address}>{purchase.shop_address}</p>
+                          )}
+                          {purchase.shop_city && purchase.shop_country && (
+                            <p className="text-xs text-slate-400">{purchase.shop_city}, {purchase.shop_country}</p>
+                          )}
+                          {purchase.shop_phone && (
+                            <p className="text-xs text-slate-500">{purchase.shop_phone}</p>
+                          )}
+                        </div>
+                      ) : purchase.shop_id ? (
                         <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -438,7 +474,7 @@ export default function PlanPurchases() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
                         </button>
-                        {!purchase.shop_id && purchase.payment_proof && (
+                        {!purchase.shop_id && purchase.payment_proof && purchase.status === 'approved' && (
                           <button
                             onClick={() => handleCreateShop(purchase)}
                             title="Create shop from this purchase"
@@ -488,6 +524,37 @@ export default function PlanPurchases() {
                 <p className="font-semibold text-slate-800">{selectedPurchase.plan_name}</p>
                 <p className="text-sm text-slate-600">{selectedPurchase.user_name} - ৳{parseFloat(selectedPurchase.plan_price || 0).toFixed(2)}</p>
               </div>
+
+              {/* Shop Registration Details */}
+              {selectedPurchase.shop_name && (
+                <div className="bg-emerald-50 rounded-xl p-4 mb-4">
+                  <h4 className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-3">Shop Registration Details</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Shop Name:</span>
+                      <span className="font-semibold text-slate-800">{selectedPurchase.shop_name}</span>
+                    </div>
+                    {selectedPurchase.shop_address && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Address:</span>
+                        <span className="text-slate-800 text-right max-w-[200px] truncate" title={selectedPurchase.shop_address}>{selectedPurchase.shop_address}</span>
+                      </div>
+                    )}
+                    {selectedPurchase.shop_phone && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Phone:</span>
+                        <span className="font-mono text-slate-800">{selectedPurchase.shop_phone}</span>
+                      </div>
+                    )}
+                    {selectedPurchase.shop_city && selectedPurchase.shop_country && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Location:</span>
+                        <span className="text-slate-800">{selectedPurchase.shop_city}, {selectedPurchase.shop_country}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Payment Details */}
               <div className="bg-indigo-50 rounded-xl p-4 mb-4">

@@ -562,25 +562,22 @@ class DB {
                         `user_name` VARCHAR(100) NOT NULL,
                         `user_email` VARCHAR(100) NOT NULL,
                         `user_phone` VARCHAR(20) NULL,
-                        `amount_paid` DECIMAL(10,2) NOT NULL,
-                        `currency` VARCHAR(10) NOT NULL DEFAULT 'BDT',
-                        `payment_method` ENUM('cash', 'card', 'mobile_pay', 'bank_transfer', 'other') NOT NULL DEFAULT 'other',
-                        `status` ENUM('pending', 'completed', 'failed', 'cancelled') NOT NULL DEFAULT 'pending',
+                        `payment_method` VARCHAR(50) NULL,
+                        `payment_method_id` INT NULL,
+                        `notes` TEXT NULL,
                         `transaction_id` VARCHAR(100) NULL,
                         `bank_name` VARCHAR(100) NULL,
                         `account_number` VARCHAR(50) NULL,
                         `card_last_four` VARCHAR(4) NULL,
-                        `payment_proof` TEXT NULL,
-                        `notes` TEXT NULL,
-                        `purchase_date` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        `expiry_date` TIMESTAMP NULL,
+                        `payment_proof` VARCHAR(255) NULL,
+                        `status` ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
                         `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                         PRIMARY KEY (`id`),
                         INDEX `idx_plan_purchases_plan` (`plan_id`),
                         INDEX `idx_plan_purchases_shop` (`shop_id`),
                         INDEX `idx_plan_purchases_status` (`status`),
-                        INDEX `idx_plan_purchases_date` (`purchase_date`),
+                        INDEX `idx_plan_purchases_date` (`created_at`),
                         CONSTRAINT `fk_plan_purchases_plan`
                             FOREIGN KEY (`plan_id`)
                             REFERENCES `pricing_plans` (`id`)
@@ -613,6 +610,44 @@ class DB {
                 }
                 if (!$columnExists('plan_purchases', 'payment_method_id')) {
                     $pdo->exec("ALTER TABLE `plan_purchases` ADD COLUMN `payment_method_id` INT NULL");
+                }
+                // Add shop registration fields to plan_purchases table if they don't exist
+                if (!$columnExists('plan_purchases', 'shop_name')) {
+                    $pdo->exec("ALTER TABLE `plan_purchases` ADD COLUMN `shop_name` VARCHAR(100) NULL");
+                }
+                if (!$columnExists('plan_purchases', 'shop_address')) {
+                    $pdo->exec("ALTER TABLE `plan_purchases` ADD COLUMN `shop_address` VARCHAR(255) NULL");
+                }
+                if (!$columnExists('plan_purchases', 'shop_phone')) {
+                    $pdo->exec("ALTER TABLE `plan_purchases` ADD COLUMN `shop_phone` VARCHAR(20) NULL");
+                }
+                if (!$columnExists('plan_purchases', 'shop_city')) {
+                    $pdo->exec("ALTER TABLE `plan_purchases` ADD COLUMN `shop_city` VARCHAR(100) NULL");
+                }
+                if (!$columnExists('plan_purchases', 'shop_country')) {
+                    $pdo->exec("ALTER TABLE `plan_purchases` ADD COLUMN `shop_country` VARCHAR(100) NULL");
+                }
+                // Fix status ENUM if it has wrong values (migration from old schema)
+                try {
+                    $stmt = $pdo->query("SHOW COLUMNS FROM `plan_purchases` LIKE 'status'");
+                    $columnInfo = $stmt->fetch();
+                    if ($columnInfo) {
+                        $type = $columnInfo['Type'];
+                        // Check if it has the old enum values
+                        if (strpos($type, 'completed') !== false || strpos($type, 'failed') !== false) {
+                            // Update existing records to use new status values
+                            $pdo->exec("UPDATE `plan_purchases` SET status = 'approved' WHERE status = 'completed'");
+                            $pdo->exec("UPDATE `plan_purchases` SET status = 'rejected' WHERE status IN ('failed', 'cancelled')");
+                            // Modify the column to use correct enum values
+                            $pdo->exec("ALTER TABLE `plan_purchases` MODIFY COLUMN `status` ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending'");
+                        }
+                    }
+                } catch (\Exception $e) {
+                    error_log("Failed to fix plan_purchases status enum: " . $e->getMessage());
+                }
+                // Add payment_date column if it doesn't exist
+                if (!$columnExists('plan_purchases', 'payment_date')) {
+                    $pdo->exec("ALTER TABLE `plan_purchases` ADD COLUMN `payment_date` DATE NULL AFTER `payment_proof`");
                 }
             }
 

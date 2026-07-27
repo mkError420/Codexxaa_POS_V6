@@ -25,7 +25,12 @@ export default function Home({ onLoginSuccess }) {
     user_email: '',
     user_phone: '',
     payment_method: 'other',
-    notes: ''
+    notes: '',
+    shop_name: '',
+    shop_address: '',
+    shop_phone: '',
+    shop_city: '',
+    shop_country: ''
   });
   const [purchaseLoading, setPurchaseLoading] = useState(false);
   const [purchaseError, setPurchaseError] = useState('');
@@ -36,6 +41,7 @@ export default function Home({ onLoginSuccess }) {
     bank_name: '',
     account_number: '',
     card_last_four: '',
+    payment_date: '',
     payment_proof: ''
   });
   const [paymentProofFile, setPaymentProofFile] = useState(null);
@@ -158,13 +164,19 @@ export default function Home({ onLoginSuccess }) {
       user_email: '',
       user_phone: '',
       payment_method: 'other',
-      notes: ''
+      notes: '',
+      shop_name: '',
+      shop_address: '',
+      shop_phone: '',
+      shop_city: '',
+      shop_country: ''
     });
     setPaymentDetails({
       transaction_id: '',
       bank_name: '',
       account_number: '',
       card_last_four: '',
+      payment_date: '',
       payment_proof: ''
     });
     setPaymentProofFile(null);
@@ -176,6 +188,10 @@ export default function Home({ onLoginSuccess }) {
     e.preventDefault();
     if (!purchaseForm.user_name || !purchaseForm.user_email) {
       setPurchaseError('Please fill in required fields');
+      return;
+    }
+    if (!purchaseForm.shop_name || !purchaseForm.shop_address || !purchaseForm.shop_phone || !purchaseForm.shop_city || !purchaseForm.shop_country) {
+      setPurchaseError('Please fill in all shop registration fields');
       return;
     }
     if (!purchaseForm.payment_method || purchaseForm.payment_method === 'other') {
@@ -255,7 +271,13 @@ export default function Home({ onLoginSuccess }) {
           bank_name: paymentDetails.bank_name,
           account_number: paymentDetails.account_number,
           card_last_four: paymentDetails.card_last_four,
-          payment_proof: paymentDetails.payment_proof
+          payment_date: paymentDetails.payment_date,
+          payment_proof: paymentDetails.payment_proof,
+          shop_name: purchaseForm.shop_name,
+          shop_address: purchaseForm.shop_address,
+          shop_phone: purchaseForm.shop_phone,
+          shop_city: purchaseForm.shop_city,
+          shop_country: purchaseForm.shop_country
         }),
       });
 
@@ -592,9 +614,9 @@ export default function Home({ onLoginSuccess }) {
 
           <div className="grid md:grid-cols-3 gap-8">
             {pricingPlans.map((plan) => (
-              <div key={plan.id} className={`${plan.is_popular ? 'bg-gradient-to-b from-indigo-900/50 to-violet-900/50 backdrop-blur-xl border-2 border-indigo-500 rounded-3xl p-8 relative transform scale-105 shadow-2xl shadow-indigo-600/30' : 'bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 hover:border-indigo-500/50 transition-all duration-300'}`}>
+              <div key={plan.id} className={`${plan.is_popular ? 'bg-gradient-to-b from-yellow-400/20 to-amber-400/20 backdrop-blur-xl border-2 border-yellow-400 rounded-3xl p-8 relative transform scale-105 shadow-2xl shadow-yellow-400/30' : 'bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 hover:border-indigo-500/50 transition-all duration-300'}`}>
                 {plan.is_popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-xs font-bold px-4 py-1 rounded-full">
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-amber-400 text-white text-xs font-bold px-4 py-1 rounded-full">
                     MOST POPULAR
                   </div>
                 )}
@@ -616,9 +638,9 @@ export default function Home({ onLoginSuccess }) {
                     </li>
                   ))}
                 </ul>
-                <button 
+                <button
                   onClick={() => handlePurchasePlan(plan)}
-                  className="w-full py-3 ${plan.is_popular ? 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700' : 'bg-slate-700 hover:bg-slate-600'} text-white font-semibold rounded-xl transition-all duration-200 shadow-lg"
+                  className="w-full py-3 ${plan.is_popular ? 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500' : 'bg-slate-700 hover:bg-slate-600'} text-white font-semibold rounded-xl transition-all duration-200 shadow-lg"
                 >
                   {plan.button_text}
                 </button>
@@ -737,8 +759,8 @@ export default function Home({ onLoginSuccess }) {
       {/* Purchase Modal */}
       {showPurchaseModal && selectedPlan && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <div className="flex justify-between items-center mb-6">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold text-white">Purchase Plan</h3>
               <button
                 onClick={() => setShowPurchaseModal(false)}
@@ -762,36 +784,63 @@ export default function Home({ onLoginSuccess }) {
               </div>
             ) : showPaymentStep ? (
               <form onSubmit={handlePurchaseSubmit} className="space-y-4">
-                <div className="bg-slate-700/50 rounded-xl p-4 mb-4">
-                  <h4 className="font-semibold text-white mb-1">{selectedPlan.name}</h4>
-                  <p className="text-2xl font-bold text-indigo-400">BDT {selectedPlan.price}<span className="text-sm text-slate-400">/{selectedPlan.period}</span></p>
-                  <p className="text-slate-400 text-sm mt-1">Payment Method: {selectedPaymentMethod?.name || 'Other'}</p>
+                {/* Order Summary */}
+                <div className="bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border border-indigo-700/50 rounded-xl p-4 mb-4">
+                  <h4 className="text-sm font-semibold text-indigo-300 mb-3 flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    Order Summary
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Plan:</span>
+                      <span className="text-white font-medium">{selectedPlan.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Period:</span>
+                      <span className="text-white">{selectedPlan.period}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Payment Method:</span>
+                      <span className="text-white font-medium">{selectedPaymentMethod?.name || 'Other'}</span>
+                    </div>
+                    <div className="border-t border-slate-600 pt-2 mt-2 flex justify-between">
+                      <span className="text-slate-300 font-semibold">Total Amount:</span>
+                      <span className="text-xl font-bold text-emerald-400">BDT {selectedPlan.price}</span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Payment Details Display */}
+                {/* Payment Instructions */}
                 {selectedPaymentMethod && (
-                  <div className="bg-indigo-900/30 border border-indigo-700/50 rounded-xl p-4 mb-4">
-                    <h4 className="text-sm font-semibold text-indigo-300 mb-3">Send payment to:</h4>
+                  <div className="bg-amber-900/20 border border-amber-700/50 rounded-xl p-4 mb-4">
+                    <h4 className="text-sm font-semibold text-amber-300 mb-3 flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Payment Instructions
+                    </h4>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Method:</span>
+                        <span className="text-slate-400">Send payment to:</span>
                         <span className="text-white font-medium">{selectedPaymentMethod.name}</span>
                       </div>
                       {selectedPaymentMethod.phone_number && (
                         <div className="flex justify-between">
                           <span className="text-slate-400">Number:</span>
-                          <span className="text-white font-mono">{selectedPaymentMethod.phone_number}</span>
+                          <span className="text-white font-mono bg-slate-700/50 px-2 py-0.5 rounded">{selectedPaymentMethod.phone_number}</span>
                         </div>
                       )}
                       {selectedPaymentMethod.account_number && (
                         <div className="flex justify-between">
                           <span className="text-slate-400">Account:</span>
-                          <span className="text-white font-mono">{selectedPaymentMethod.account_number}</span>
+                          <span className="text-white font-mono bg-slate-700/50 px-2 py-0.5 rounded">{selectedPaymentMethod.account_number}</span>
                         </div>
                       )}
                       {selectedPaymentMethod.account_holder && (
                         <div className="flex justify-between">
-                          <span className="text-slate-400">Holder:</span>
+                          <span className="text-slate-400">Account Holder:</span>
                           <span className="text-white">{selectedPaymentMethod.account_holder}</span>
                         </div>
                       )}
@@ -799,6 +848,12 @@ export default function Home({ onLoginSuccess }) {
                         <div className="flex justify-between">
                           <span className="text-slate-400">Branch:</span>
                           <span className="text-white">{selectedPaymentMethod.branch_name}</span>
+                        </div>
+                      )}
+                      {selectedPaymentMethod.routing_number && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Routing Number:</span>
+                          <span className="text-white font-mono">{selectedPaymentMethod.routing_number}</span>
                         </div>
                       )}
                     </div>
@@ -811,22 +866,86 @@ export default function Home({ onLoginSuccess }) {
                   </div>
                 )}
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Transaction ID *</label>
-                  <input
-                    type="text"
-                    required
-                    value={paymentDetails.transaction_id}
-                    onChange={(e) => setPaymentDetails({...paymentDetails, transaction_id: e.target.value})}
-                    className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Enter transaction ID or reference number"
-                  />
+                {/* Payment Details Form */}
+                <div className="bg-slate-700/30 border border-slate-600 rounded-xl p-4">
+                  <h4 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                    Payment Details
+                  </h4>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-300 mb-1.5">Transaction ID / Reference Number *</label>
+                      <input
+                        type="text"
+                        required
+                        value={paymentDetails.transaction_id}
+                        onChange={(e) => setPaymentDetails({...paymentDetails, transaction_id: e.target.value})}
+                        className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Enter transaction ID from your payment receipt"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-300 mb-1.5">Bank Name</label>
+                        <input
+                          type="text"
+                          value={paymentDetails.bank_name}
+                          onChange={(e) => setPaymentDetails({...paymentDetails, bank_name: e.target.value})}
+                          className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          placeholder="Bank name (if applicable)"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-slate-300 mb-1.5">Account Number</label>
+                        <input
+                          type="text"
+                          value={paymentDetails.account_number}
+                          onChange={(e) => setPaymentDetails({...paymentDetails, account_number: e.target.value})}
+                          className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          placeholder="Your account number"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-slate-300 mb-1.5">Card Last 4 Digits</label>
+                      <input
+                        type="text"
+                        maxLength="4"
+                        value={paymentDetails.card_last_four}
+                        onChange={(e) => setPaymentDetails({...paymentDetails, card_last_four: e.target.value.replace(/\D/g, '')})}
+                        className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Last 4 digits (if card payment)"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-slate-300 mb-1.5">Payment Date</label>
+                      <input
+                        type="date"
+                        value={paymentDetails.payment_date || ''}
+                        onChange={(e) => setPaymentDetails({...paymentDetails, payment_date: e.target.value})}
+                        className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Payment Proof (Screenshot)</label>
+                {/* Payment Proof Upload */}
+                <div className="bg-slate-700/30 border border-slate-600 rounded-xl p-4">
+                  <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Payment Proof (Screenshot/Receipt) *
+                  </h4>
                   <div
-                    className={`relative border-2 border-dashed rounded-xl p-4 transition-colors cursor-pointer ${
+                    className={`relative border-2 border-dashed rounded-lg p-4 transition-colors cursor-pointer ${
                       uploadingProof
                         ? 'border-indigo-500 bg-indigo-900/20'
                         : paymentProofPreview
@@ -920,8 +1039,8 @@ export default function Home({ onLoginSuccess }) {
                 </div>
               </form>
             ) : (
-              <form onSubmit={handleProceedToPayment} className="space-y-4">
-                <div className="bg-slate-700/50 rounded-xl p-4 mb-4">
+              <form onSubmit={handleProceedToPayment} className="space-y-3">
+                <div className="bg-slate-700/50 rounded-xl p-4 mb-3">
                   <h4 className="font-semibold text-white mb-1">{selectedPlan.name}</h4>
                   <p className="text-2xl font-bold text-indigo-400">BDT {selectedPlan.price}<span className="text-sm text-slate-400">/{selectedPlan.period}</span></p>
                 </div>
@@ -932,60 +1051,130 @@ export default function Home({ onLoginSuccess }) {
                   </div>
                 )}
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Full Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={purchaseForm.user_name}
-                    onChange={(e) => setPurchaseForm({...purchaseForm, user_name: e.target.value})}
-                    className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Enter your full name"
-                  />
+                {/* Personal Details - Grid Layout */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Full Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={purchaseForm.user_name}
+                      onChange={(e) => setPurchaseForm({...purchaseForm, user_name: e.target.value})}
+                      className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Email Address *</label>
+                    <input
+                      type="email"
+                      required
+                      value={purchaseForm.user_email}
+                      onChange={(e) => setPurchaseForm({...purchaseForm, user_email: e.target.value})}
+                      className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      placeholder="Enter your email"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Phone Number</label>
+                    <input
+                      type="tel"
+                      value={purchaseForm.user_phone}
+                      onChange={(e) => setPurchaseForm({...purchaseForm, user_phone: e.target.value})}
+                      className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Payment Method *</label>
+                    <select
+                      required
+                      value={purchaseForm.payment_method}
+                      onChange={(e) => setPurchaseForm({...purchaseForm, payment_method: e.target.value})}
+                      className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="">Select a payment method</option>
+                      {paymentMethods.length === 0 ? (
+                        <option value="cash">Cash</option>
+                      ) : (
+                        paymentMethods.map((method) => (
+                          <option key={method.id} value={method.id}>
+                            {method.name} ({method.type === 'mobile_payment' ? 'Mobile' : method.type === 'bank_transfer' ? 'Bank' : 'Card'})
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Email Address *</label>
-                  <input
-                    type="email"
-                    required
-                    value={purchaseForm.user_email}
-                    onChange={(e) => setPurchaseForm({...purchaseForm, user_email: e.target.value})}
-                    className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Enter your email"
-                  />
-                </div>
+                {/* Shop Registration Section - Grid Layout */}
+                <div className="border-t border-slate-600 pt-3 mt-3">
+                  <h4 className="text-sm font-semibold text-indigo-400 mb-3">Shop Registration Details</h4>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Shop Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={purchaseForm.shop_name}
+                        onChange={(e) => setPurchaseForm({...purchaseForm, shop_name: e.target.value})}
+                        className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Enter your shop name"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Phone Number</label>
-                  <input
-                    type="tel"
-                    value={purchaseForm.user_phone}
-                    onChange={(e) => setPurchaseForm({...purchaseForm, user_phone: e.target.value})}
-                    className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Enter your phone number"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Shop Address *</label>
+                      <input
+                        type="text"
+                        required
+                        value={purchaseForm.shop_address}
+                        onChange={(e) => setPurchaseForm({...purchaseForm, shop_address: e.target.value})}
+                        className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Enter your shop address"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Payment Method *</label>
-                  <select
-                    required
-                    value={purchaseForm.payment_method}
-                    onChange={(e) => setPurchaseForm({...purchaseForm, payment_method: e.target.value})}
-                    className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="">Select a payment method</option>
-                    {paymentMethods.length === 0 ? (
-                      <option value="cash">Cash</option>
-                    ) : (
-                      paymentMethods.map((method) => (
-                        <option key={method.id} value={method.id}>
-                          {method.name} ({method.type === 'mobile_payment' ? 'Mobile' : method.type === 'bank_transfer' ? 'Bank' : 'Card'})
-                        </option>
-                      ))
-                    )}
-                  </select>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Shop Phone *</label>
+                      <input
+                        type="tel"
+                        required
+                        value={purchaseForm.shop_phone}
+                        onChange={(e) => setPurchaseForm({...purchaseForm, shop_phone: e.target.value})}
+                        className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Shop phone number"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">City *</label>
+                      <input
+                        type="text"
+                        required
+                        value={purchaseForm.shop_city}
+                        onChange={(e) => setPurchaseForm({...purchaseForm, shop_city: e.target.value})}
+                        className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="City"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Country *</label>
+                      <input
+                        type="text"
+                        required
+                        value={purchaseForm.shop_country}
+                        onChange={(e) => setPurchaseForm({...purchaseForm, shop_country: e.target.value})}
+                        className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Country"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div>
@@ -993,9 +1182,9 @@ export default function Home({ onLoginSuccess }) {
                   <textarea
                     value={purchaseForm.notes}
                     onChange={(e) => setPurchaseForm({...purchaseForm, notes: e.target.value})}
-                    className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                    className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                     placeholder="Any additional notes..."
-                    rows="3"
+                    rows="2"
                   />
                 </div>
 
