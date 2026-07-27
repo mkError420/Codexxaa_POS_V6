@@ -1470,4 +1470,592 @@ class OtherController {
             Auth::jsonError('Server error deleting staff profile.', 500);
         }
     }
+
+    // ==========================================
+    // SITE SETTINGS
+    // ==========================================
+
+    public static function getSiteSettings() {
+        // No authentication required for public site settings (home page)
+        try {
+            $stmt = DB::query('SELECT setting_key, setting_value FROM site_settings');
+            $settings = $stmt->fetchAll();
+
+            $settingsArray = [];
+            foreach ($settings as $setting) {
+                $settingsArray[$setting['setting_key']] = $setting['setting_value'];
+            }
+
+            // Dynamically calculate active shop count
+            $shopStmt = DB::query('SELECT COUNT(*) as count FROM shops WHERE status = ?', ['active']);
+            $shopCount = $shopStmt->fetch();
+            $settingsArray['active_shop_count'] = (int)$shopCount['count'];
+
+            // Ensure all expected fields exist with defaults
+            $settingsArray['site_name'] = $settingsArray['site_name'] ?? 'CodexaaPOS++';
+            $settingsArray['site_description'] = $settingsArray['site_description'] ?? 'Modern Point of Sale For Your Business';
+            $settingsArray['hero_content'] = $settingsArray['hero_content'] ?? 'Streamline your retail operations with our powerful, cloud-based POS solution. Manage inventory, sales, customers, and more from anywhere.';
+            $settingsArray['site_logo'] = $settingsArray['site_logo'] ?? '';
+
+            header('Content-Type: application/json');
+            echo json_encode($settingsArray);
+
+        } catch (\Exception $e) {
+            error_log('Fetch site settings error: ' . $e->getMessage());
+            // Return defaults on error
+            header('Content-Type: application/json');
+            echo json_encode([
+                'site_name' => 'CodexaaPOS++',
+                'site_description' => 'Modern Point of Sale For Your Business',
+                'hero_content' => 'Streamline your retail operations with our powerful, cloud-based POS solution. Manage inventory, sales, customers, and more from anywhere.',
+                'site_logo' => '',
+                'active_shop_count' => 0
+            ]);
+        }
+    }
+
+    public static function updateSiteSettings($requestData) {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        if (empty($requestData)) {
+            Auth::jsonError('No settings data provided.', 400);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            foreach ($requestData as $key => $value) {
+                // Validate key format (alphanumeric and underscores only)
+                if (!preg_match('/^[a-zA-Z0-9_]+$/', $key)) {
+                    DB::rollBack();
+                    Auth::jsonError("Invalid setting key format: $key", 400);
+                }
+
+                // Use INSERT ... ON DUPLICATE KEY UPDATE to handle both new and existing keys
+                DB::query(
+                    'INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) 
+                     ON DUPLICATE KEY UPDATE setting_value = ?',
+                    [$key, $value, $value]
+                );
+            }
+
+            DB::commit();
+
+            header('Content-Type: application/json');
+            echo json_encode(['message' => 'Site settings updated successfully.']);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            error_log('Update site settings error: ' . $e->getMessage());
+            Auth::jsonError('Server error updating site settings.', 500);
+        }
+    }
+
+    // ==========================================
+    // PRICING PLANS
+    // ==========================================
+
+    public static function listPricingPlans() {
+        // No authentication required for public pricing plans (home page)
+        try {
+            $stmt = DB::query('SELECT * FROM pricing_plans ORDER BY sort_order ASC, id ASC');
+            $plans = $stmt->fetchAll();
+
+            foreach ($plans as &$plan) {
+                $plan['id'] = (int)$plan['id'];
+                $plan['price'] = (float)$plan['price'];
+                $plan['sort_order'] = (int)$plan['sort_order'];
+                $plan['is_popular'] = (int)$plan['is_popular'] === 1;
+                // Decode features JSON array
+                if (is_string($plan['features'])) {
+                    $plan['features'] = json_decode($plan['features'], true);
+                    if (!is_array($plan['features'])) {
+                        $plan['features'] = [];
+                    }
+                }
+            }
+
+            header('Content-Type: application/json');
+            echo json_encode($plans);
+
+        } catch (\Exception $e) {
+            error_log('Fetch pricing plans error: ' . $e->getMessage());
+            header('Content-Type: application/json');
+            echo json_encode([]);
+        }
+    }
+
+    public static function createPricingPlan($requestData) {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        $name = $requestData['name'] ?? '';
+        $description = $requestData['description'] ?? '';
+        $price = (float)($requestData['price'] ?? 0);
+        $period = $requestData['period'] ?? 'month';
+        $features = $requestData['features'] ?? [];
+        $isPopular = isset($requestData['is_popular']) ? (int)$requestData['is_popular'] : 0;
+        $buttonText = $requestData['button_text'] ?? 'Get Started';
+        $sortOrder = (int)($requestData['sort_order'] ?? 0);
+
+        if (empty($name) || $price <= 0) {
+            Auth::jsonError('Plan name and valid price are required.', 400);
+        }
+
+        if (!in_array($period, ['month', 'year', 'week'])) {
+            Auth::jsonError('Invalid period. Must be month, year, or week.', 400);
+        }
+
+        try {
+            // Encode features as JSON array
+            $featuresJson = is_array($features) ? json_encode($features) : '[]';
+
+            DB::query(
+                'INSERT INTO pricing_plans (name, description, price, period, features, is_popular, button_text, sort_order) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                [$name, $description, $price, $period, $featuresJson, $isPopular, $buttonText, $sortOrder]
+            );
+            $newId = DB::lastInsertId();
+
+            header('Content-Type: application/json');
+            http_response_code(201);
+            echo json_encode([
+                'message' => 'Pricing plan created successfully.',
+                'planId' => (int)$newId
+            ]);
+
+        } catch (\Exception $e) {
+            error_log('Create pricing plan error: ' . $e->getMessage());
+            Auth::jsonError('Server error creating pricing plan.', 500);
+        }
+    }
+
+    public static function updatePricingPlan($id, $requestData) {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        $planId = (int)$id;
+        $name = $requestData['name'] ?? '';
+        $description = $requestData['description'] ?? '';
+        $price = (float)($requestData['price'] ?? 0);
+        $period = $requestData['period'] ?? 'month';
+        $features = $requestData['features'] ?? [];
+        $isPopular = isset($requestData['is_popular']) ? (int)$requestData['is_popular'] : 0;
+        $buttonText = $requestData['button_text'] ?? 'Get Started';
+        $sortOrder = (int)($requestData['sort_order'] ?? 0);
+
+        if (empty($name) || $price <= 0) {
+            Auth::jsonError('Plan name and valid price are required.', 400);
+        }
+
+        if (!in_array($period, ['month', 'year', 'week'])) {
+            Auth::jsonError('Invalid period. Must be month, year, or week.', 400);
+        }
+
+        try {
+            // Check if plan exists
+            $stmt = DB::query('SELECT id FROM pricing_plans WHERE id = ?', [$planId]);
+            if (!$stmt->fetch()) {
+                Auth::jsonError('Pricing plan not found.', 404);
+            }
+
+            // Encode features as JSON array
+            $featuresJson = is_array($features) ? json_encode($features) : '[]';
+
+            DB::query(
+                'UPDATE pricing_plans SET name = ?, description = ?, price = ?, period = ?, features = ?, is_popular = ?, button_text = ?, sort_order = ? WHERE id = ?',
+                [$name, $description, $price, $period, $featuresJson, $isPopular, $buttonText, $sortOrder, $planId]
+            );
+
+            header('Content-Type: application/json');
+            echo json_encode(['message' => 'Pricing plan updated successfully.']);
+
+        } catch (\Exception $e) {
+            error_log('Update pricing plan error: ' . $e->getMessage());
+            Auth::jsonError('Server error updating pricing plan.', 500);
+        }
+    }
+
+    public static function deletePricingPlan($id) {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        $planId = (int)$id;
+
+        try {
+            // Check if plan exists
+            $stmt = DB::query('SELECT id FROM pricing_plans WHERE id = ?', [$planId]);
+            if (!$stmt->fetch()) {
+                Auth::jsonError('Pricing plan not found.', 404);
+            }
+
+            DB::query('DELETE FROM pricing_plans WHERE id = ?', [$planId]);
+
+            header('Content-Type: application/json');
+            echo json_encode(['message' => 'Pricing plan deleted successfully.']);
+
+        } catch (\Exception $e) {
+            error_log('Delete pricing plan error: ' . $e->getMessage());
+            Auth::jsonError('Server error deleting pricing plan.', 500);
+        }
+    }
+
+    // ==========================================
+    // PLAN PURCHASES
+    // ==========================================
+
+    public static function listPlanPurchases() {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        try {
+            $stmt = DB::query(
+                'SELECT pp.*, p.name as plan_name, p.price as plan_price, p.period as plan_period,
+                        pm.name as payment_method_name
+                 FROM plan_purchases pp 
+                 LEFT JOIN pricing_plans p ON pp.plan_id = p.id 
+                 LEFT JOIN payment_methods pm ON pp.payment_method_id = pm.id
+                 ORDER BY pp.created_at DESC'
+            );
+            $purchases = $stmt->fetchAll();
+
+            foreach ($purchases as &$purchase) {
+                $purchase['id'] = (int)$purchase['id'];
+                $purchase['plan_id'] = (int)$purchase['plan_id'];
+                $purchase['plan_price'] = (float)$purchase['plan_price'];
+                $purchase['shop_id'] = $purchase['shop_id'] ? (int)$purchase['shop_id'] : null;
+                // Use payment_method_name if available, otherwise fall back to payment_method
+                if (!empty($purchase['payment_method_name'])) {
+                    $purchase['payment_method'] = $purchase['payment_method_name'];
+                }
+            }
+
+            header('Content-Type: application/json');
+            echo json_encode($purchases);
+
+        } catch (\Exception $e) {
+            error_log('Fetch plan purchases error: ' . $e->getMessage());
+            Auth::jsonError('Server error retrieving plan purchases.', 500);
+        }
+    }
+
+    public static function createPlanPurchase($requestData) {
+        // No authentication required for public plan purchase (home page)
+        $planId = $requestData['plan_id'] ?? null;
+        $userName = $requestData['user_name'] ?? '';
+        $userEmail = $requestData['user_email'] ?? '';
+        $userPhone = $requestData['user_phone'] ?? '';
+        $paymentMethod = $requestData['payment_method'] ?? '';
+        $paymentMethodId = $requestData['payment_method_id'] ?? null;
+        $notes = $requestData['notes'] ?? '';
+        $transactionId = $requestData['transaction_id'] ?? '';
+        $bankName = $requestData['bank_name'] ?? '';
+        $accountNumber = $requestData['account_number'] ?? '';
+        $cardLastFour = $requestData['card_last_four'] ?? '';
+        $paymentProof = $requestData['payment_proof'] ?? '';
+
+        if (empty($planId) || empty($userName) || empty($userEmail)) {
+            header('Content-Type: application/json');
+            http_response_code(400);
+            echo json_encode(['error' => 'Plan ID, user name, and user email are required.']);
+            return;
+        }
+
+        try {
+            DB::query(
+                'INSERT INTO plan_purchases (plan_id, user_name, user_email, user_phone, payment_method, payment_method_id, notes, transaction_id, bank_name, account_number, card_last_four, payment_proof) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [$planId, $userName, $userEmail, $userPhone, $paymentMethod, $paymentMethodId, $notes, $transactionId, $bankName, $accountNumber, $cardLastFour, $paymentProof]
+            );
+            $newId = DB::lastInsertId();
+
+            header('Content-Type: application/json');
+            http_response_code(201);
+            echo json_encode([
+                'message' => 'Plan purchase submitted successfully.',
+                'purchaseId' => (int)$newId
+            ]);
+
+        } catch (\Exception $e) {
+            error_log('Create plan purchase error: ' . $e->getMessage());
+            header('Content-Type: application/json');
+            http_response_code(500);
+            echo json_encode(['error' => 'Server error processing plan purchase.']);
+        }
+    }
+
+    public static function updatePlanPurchase($id, $requestData) {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        $purchaseId = (int)$id;
+        $status = $requestData['status'] ?? 'pending';
+        $shopId = isset($requestData['shop_id']) ? $requestData['shop_id'] : null;
+        $notes = $requestData['notes'] ?? null;
+
+        if (!in_array($status, ['pending', 'approved', 'rejected'])) {
+            Auth::jsonError('Invalid status value.', 400);
+        }
+
+        try {
+            $stmt = DB::query('SELECT id FROM plan_purchases WHERE id = ?', [$purchaseId]);
+            if (!$stmt->fetch()) {
+                Auth::jsonError('Plan purchase not found.', 404);
+            }
+
+            $updateFields = ['status = ?'];
+            $params = [$status];
+
+            if ($shopId !== null) {
+                $updateFields[] = 'shop_id = ?';
+                $params[] = $shopId;
+            }
+
+            if ($notes !== null) {
+                $updateFields[] = 'notes = ?';
+                $params[] = $notes;
+            }
+
+            $params[] = $purchaseId;
+
+            DB::query('UPDATE plan_purchases SET ' . implode(', ', $updateFields) . ' WHERE id = ?', $params);
+
+            header('Content-Type: application/json');
+            echo json_encode(['message' => 'Plan purchase updated successfully.']);
+
+        } catch (\Exception $e) {
+            error_log('Update plan purchase error: ' . $e->getMessage());
+            Auth::jsonError('Server error updating plan purchase.', 500);
+        }
+    }
+
+    public static function deletePlanPurchase($id) {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        $purchaseId = (int)$id;
+
+        try {
+            $stmt = DB::query('SELECT id FROM plan_purchases WHERE id = ?', [$purchaseId]);
+            if (!$stmt->fetch()) {
+                Auth::jsonError('Plan purchase not found.', 404);
+            }
+
+            DB::query('DELETE FROM plan_purchases WHERE id = ?', [$purchaseId]);
+
+            header('Content-Type: application/json');
+            echo json_encode(['message' => 'Plan purchase deleted successfully.']);
+
+        } catch (\Exception $e) {
+            error_log('Delete plan purchase error: ' . $e->getMessage());
+            Auth::jsonError('Server error deleting plan purchase.', 500);
+        }
+    }
+
+    // ==========================================
+    // PAYMENT METHODS
+    // ==========================================
+
+    public static function listPaymentMethods() {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        try {
+            $stmt = DB::query('SELECT * FROM payment_methods ORDER BY name ASC');
+            $methods = $stmt->fetchAll();
+
+            foreach ($methods as &$method) {
+                $method['id'] = (int)$method['id'];
+                $method['is_active'] = (int)$method['is_active'] === 1;
+            }
+
+            header('Content-Type: application/json');
+            echo json_encode($methods);
+
+        } catch (\Exception $e) {
+            error_log('Fetch payment methods error: ' . $e->getMessage());
+            Auth::jsonError('Server error retrieving payment methods.', 500);
+        }
+    }
+
+    public static function getActivePaymentMethods() {
+        // No authentication required for public active payment methods (home page)
+        try {
+            $stmt = DB::query('SELECT * FROM payment_methods WHERE is_active = 1 ORDER BY name ASC');
+            $methods = $stmt->fetchAll();
+
+            foreach ($methods as &$method) {
+                $method['id'] = (int)$method['id'];
+                $method['is_active'] = (int)$method['is_active'] === 1;
+            }
+
+            header('Content-Type: application/json');
+            echo json_encode($methods);
+
+        } catch (\Exception $e) {
+            error_log('Fetch active payment methods error: ' . $e->getMessage());
+            header('Content-Type: application/json');
+            echo json_encode([]);
+        }
+    }
+
+    public static function createPaymentMethod($requestData) {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        $name = $requestData['name'] ?? '';
+        $type = $requestData['type'] ?? '';
+        $description = $requestData['description'] ?? '';
+        $instructions = $requestData['instructions'] ?? '';
+        $isActive = isset($requestData['is_active']) ? (int)$requestData['is_active'] : 1;
+
+        if (empty($name) || empty($type)) {
+            Auth::jsonError('Name and type are required.', 400);
+        }
+
+        try {
+            DB::query(
+                'INSERT INTO payment_methods (name, type, description, instructions, is_active) 
+                 VALUES (?, ?, ?, ?, ?)',
+                [$name, $type, $description, $instructions, $isActive]
+            );
+            $newId = DB::lastInsertId();
+
+            header('Content-Type: application/json');
+            http_response_code(201);
+            echo json_encode([
+                'message' => 'Payment method created successfully.',
+                'methodId' => (int)$newId
+            ]);
+
+        } catch (\Exception $e) {
+            error_log('Create payment method error: ' . $e->getMessage());
+            Auth::jsonError('Server error creating payment method.', 500);
+        }
+    }
+
+    public static function updatePaymentMethod($id, $requestData) {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        $methodId = (int)$id;
+        $name = $requestData['name'] ?? '';
+        $type = $requestData['type'] ?? '';
+        $description = $requestData['description'] ?? '';
+        $instructions = $requestData['instructions'] ?? '';
+        $isActive = isset($requestData['is_active']) ? (int)$requestData['is_active'] : 1;
+
+        if (empty($name) || empty($type)) {
+            Auth::jsonError('Name and type are required.', 400);
+        }
+
+        try {
+            $stmt = DB::query('SELECT id FROM payment_methods WHERE id = ?', [$methodId]);
+            if (!$stmt->fetch()) {
+                Auth::jsonError('Payment method not found.', 404);
+            }
+
+            DB::query(
+                'UPDATE payment_methods SET name = ?, type = ?, description = ?, instructions = ?, is_active = ? WHERE id = ?',
+                [$name, $type, $description, $instructions, $isActive, $methodId]
+            );
+
+            header('Content-Type: application/json');
+            echo json_encode(['message' => 'Payment method updated successfully.']);
+
+        } catch (\Exception $e) {
+            error_log('Update payment method error: ' . $e->getMessage());
+            Auth::jsonError('Server error updating payment method.', 500);
+        }
+    }
+
+    public static function deletePaymentMethod($id) {
+        Auth::authenticate();
+        Auth::authorize(['super_admin']);
+
+        $methodId = (int)$id;
+
+        try {
+            $stmt = DB::query('SELECT id FROM payment_methods WHERE id = ?', [$methodId]);
+            if (!$stmt->fetch()) {
+                Auth::jsonError('Payment method not found.', 404);
+            }
+
+            DB::query('DELETE FROM payment_methods WHERE id = ?', [$methodId]);
+
+            header('Content-Type: application/json');
+            echo json_encode(['message' => 'Payment method deleted successfully.']);
+
+        } catch (\Exception $e) {
+            error_log('Delete payment method error: ' . $e->getMessage());
+            Auth::jsonError('Server error deleting payment method.', 500);
+        }
+    }
+
+    // ==========================================
+    // FILE UPLOADS
+    // ==========================================
+
+    public static function uploadPaymentProof() {
+        // No authentication required for public file upload (plan purchase)
+        try {
+            if (!isset($_FILES['payment_proof']) || $_FILES['payment_proof']['error'] !== UPLOAD_ERR_OK) {
+                header('Content-Type: application/json');
+                http_response_code(400);
+                echo json_encode(['error' => 'No file uploaded or upload error.']);
+                return;
+            }
+
+            $file = $_FILES['payment_proof'];
+            
+            // Validate file type
+            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jpg'];
+            if (!in_array($file['type'], $allowedTypes)) {
+                header('Content-Type: application/json');
+                http_response_code(400);
+                echo json_encode(['error' => 'Invalid file type. Only JPEG, PNG, GIF, or WebP images are allowed.']);
+                return;
+            }
+
+            // Validate file size (5MB max)
+            if ($file['size'] > 5 * 1024 * 1024) {
+                header('Content-Type: application/json');
+                http_response_code(400);
+                echo json_encode(['error' => 'File too large. Maximum size is 5MB.']);
+                return;
+            }
+
+            // Generate unique filename
+            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $filename = 'payment_proof_' . time() . '_' . uniqid() . '.' . $extension;
+            $uploadDir = __DIR__ . '/../uploads/payment_proofs/';
+            
+            // Create directory if it doesn't exist
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            $uploadPath = $uploadDir . $filename;
+            
+            if (!move_uploaded_file($file['tmp_name'], $uploadPath)) {
+                header('Content-Type: application/json');
+                http_response_code(500);
+                echo json_encode(['error' => 'Failed to save uploaded file.']);
+                return;
+            }
+
+            // Return the URL path (relative to backend)
+            $url = '/uploads/payment_proofs/' . $filename;
+
+            header('Content-Type: application/json');
+            echo json_encode(['url' => $url]);
+
+        } catch (\Exception $e) {
+            error_log('Upload payment proof error: ' . $e->getMessage());
+            header('Content-Type: application/json');
+            http_response_code(500);
+            echo json_encode(['error' => 'Server error uploading file.']);
+        }
+    }
 }
