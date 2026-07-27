@@ -299,6 +299,8 @@ $routes = [
     'POST' => [
         // File Uploads (public - no auth required for plan purchase proof)
         '/^upload\/payment-proof$/' => function($args, $data) { OtherController::uploadPaymentProof(); },
+        // Custom Plan Requests (public endpoint for contact form)
+        '/^custom-plan-requests$/' => function($args, $data) { OtherController::createCustomPlanRequest($data); },
         // Auth
         '/^auth\/login$/' => function($args, $data) { AuthController::login($data); },
         '/^auth\/register-shop$/' => function($args, $data) { AuthController::registerShop($data); },

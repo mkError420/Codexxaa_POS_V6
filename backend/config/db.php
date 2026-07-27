@@ -474,6 +474,7 @@ class DB {
                         `period` VARCHAR(20) DEFAULT 'month',
                         `features` JSON,
                         `is_popular` TINYINT(1) DEFAULT 0,
+                        `is_custom` TINYINT(1) DEFAULT 0,
                         `button_text` VARCHAR(50) DEFAULT 'Get Started',
                         `sort_order` INT DEFAULT 0,
                         `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -484,16 +485,21 @@ class DB {
                 error_log("Failed to create pricing_plans table: " . $e->getMessage());
             }
 
+            // Add is_custom column to pricing_plans if it doesn't exist (migration for existing tables)
+            if ($tableExists('pricing_plans') && !$columnExists('pricing_plans', 'is_custom')) {
+                $pdo->exec("ALTER TABLE `pricing_plans` ADD COLUMN `is_custom` TINYINT(1) DEFAULT 0 AFTER `is_popular`");
+            }
+
             // Insert default pricing plans only if table is empty
             try {
                 $stmt = $pdo->query("SELECT COUNT(*) FROM `pricing_plans`");
                 $count = $stmt->fetchColumn();
                 if ($count == 0) {
                     $pdo->exec("
-                        INSERT INTO `pricing_plans` (`name`, `description`, `price`, `period`, `features`, `is_popular`, `button_text`, `sort_order`) VALUES
-                        ('Starter', 'Perfect for small businesses', 29.00, 'month', '[\"1 Shop Location\", \"Up to 500 Products\", \"2 Staff Accounts\", \"Basic Analytics\", \"Email Support\"]', 0, 'Get Started', 1),
-                        ('Professional', 'For growing businesses', 79.00, 'month', '[\"Up to 5 Shop Locations\", \"Unlimited Products\", \"10 Staff Accounts\", \"Advanced Analytics\", \"Priority Support\", \"API Access\"]', 1, 'Get Started', 2),
-                        ('Enterprise', 'For large organizations', 199.00, 'month', '[\"Unlimited Shop Locations\", \"Unlimited Products\", \"Unlimited Staff Accounts\", \"Custom Analytics\", \"24/7 Dedicated Support\", \"White-label Solution\", \"Custom Integrations\"]', 0, 'Contact Sales', 3)
+                        INSERT INTO `pricing_plans` (`name`, `description`, `price`, `period`, `features`, `is_popular`, `is_custom`, `button_text`, `sort_order`) VALUES
+                        ('Starter', 'Perfect for small businesses', 29.00, 'month', '[\"1 Shop Location\", \"Up to 500 Products\", \"2 Staff Accounts\", \"Basic Analytics\", \"Email Support\"]', 0, 0, 'Get Started', 1),
+                        ('Professional', 'For growing businesses', 79.00, 'month', '[\"Up to 5 Shop Locations\", \"Unlimited Products\", \"10 Staff Accounts\", \"Advanced Analytics\", \"Priority Support\", \"API Access\"]', 1, 0, 'Get Started', 2),
+                        ('Enterprise', 'For large organizations', 199.00, 'month', '[\"Unlimited Shop Locations\", \"Unlimited Products\", \"Unlimited Staff Accounts\", \"Custom Analytics\", \"24/7 Dedicated Support\", \"White-label Solution\", \"Custom Integrations\"]', 0, 0, 'Contact Sales', 3)
                     ");
                 }
             } catch (\Exception $e) {
@@ -648,6 +654,24 @@ class DB {
                 // Add payment_date column if it doesn't exist
                 if (!$columnExists('plan_purchases', 'payment_date')) {
                     $pdo->exec("ALTER TABLE `plan_purchases` ADD COLUMN `payment_date` DATE NULL AFTER `payment_proof`");
+                }
+                // Add company column for custom plan requests
+                if (!$columnExists('plan_purchases', 'company')) {
+                    try {
+                        $pdo->exec("ALTER TABLE `plan_purchases` ADD COLUMN `company` VARCHAR(200) NULL AFTER `user_phone`");
+                        error_log("Added 'company' column to plan_purchases table");
+                    } catch (\Exception $e) {
+                        error_log("Failed to add 'company' column: " . $e->getMessage());
+                    }
+                }
+                // Add custom_message column for custom plan requests
+                if (!$columnExists('plan_purchases', 'custom_message')) {
+                    try {
+                        $pdo->exec("ALTER TABLE `plan_purchases` ADD COLUMN `custom_message` TEXT NULL AFTER `company`");
+                        error_log("Added 'custom_message' column to plan_purchases table");
+                    } catch (\Exception $e) {
+                        error_log("Failed to add 'custom_message' column: " . $e->getMessage());
+                    }
                 }
             }
 

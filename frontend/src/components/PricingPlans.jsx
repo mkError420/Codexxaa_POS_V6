@@ -15,6 +15,7 @@ export default function PricingPlans() {
     period: 'month',
     features: '',
     is_popular: false,
+    is_custom: false,
     button_text: 'Get Started',
     sort_order: 0
   });
@@ -93,6 +94,7 @@ export default function PricingPlans() {
         period: 'month',
         features: '',
         is_popular: false,
+        is_custom: false,
         button_text: 'Get Started',
         sort_order: 0
       });
@@ -111,6 +113,7 @@ export default function PricingPlans() {
       period: plan.period || 'month',
       features: plan.features ? plan.features.join('\n') : '',
       is_popular: plan.is_popular,
+      is_custom: plan.is_custom || false,
       button_text: plan.button_text || 'Get Started',
       sort_order: plan.sort_order || 0
     });
@@ -150,6 +153,7 @@ export default function PricingPlans() {
       period: 'month',
       features: '',
       is_popular: false,
+      is_custom: false,
       button_text: 'Get Started',
       sort_order: 0
     });
@@ -193,15 +197,19 @@ export default function PricingPlans() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Price *</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                  Price {formData.is_custom ? '(Optional)' : '*'}
+                </label>
                 <input
                   type="number"
                   step="0.01"
                   name="price"
                   value={formData.price}
                   onChange={handleInputChange}
-                  required
-                  className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500"
+                  required={!formData.is_custom}
+                  disabled={formData.is_custom}
+                  className={`w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500 ${formData.is_custom ? 'bg-slate-100 text-slate-400' : ''}`}
+                  placeholder={formData.is_custom ? 'Contact for pricing' : 'Enter price'}
                 />
               </div>
             </div>
@@ -275,6 +283,18 @@ export default function PricingPlans() {
                 </label>
               </div>
             </div>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="is_custom"
+                  checked={formData.is_custom}
+                  onChange={handleInputChange}
+                  className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+                />
+                <span className="text-sm text-slate-700">Custom Plan (Contact for pricing)</span>
+              </label>
+            </div>
             <div className="flex gap-3 pt-4 border-t border-slate-100">
               <button
                 type="submit"
@@ -303,7 +323,12 @@ export default function PricingPlans() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {plans.map((plan) => (
             <div key={plan.id} className={`bg-white border ${plan.is_popular ? 'border-indigo-500 ring-2 ring-indigo-500/20' : 'border-slate-200'} rounded-2xl p-6 shadow-xs relative`}>
-              {plan.is_popular && (
+              {plan.is_custom && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                  CUSTOM
+                </div>
+              )}
+              {plan.is_popular && !plan.is_custom && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full">
                   POPULAR
                 </div>

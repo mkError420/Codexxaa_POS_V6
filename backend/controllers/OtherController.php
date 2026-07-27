@@ -1567,6 +1567,7 @@ class OtherController {
                 $plan['price'] = (float)$plan['price'];
                 $plan['sort_order'] = (int)$plan['sort_order'];
                 $plan['is_popular'] = (int)$plan['is_popular'] === 1;
+                $plan['is_custom'] = (int)$plan['is_custom'] === 1;
                 // Decode features JSON array
                 if (is_string($plan['features'])) {
                     $plan['features'] = json_decode($plan['features'], true);
@@ -1596,11 +1597,17 @@ class OtherController {
         $period = $requestData['period'] ?? 'month';
         $features = $requestData['features'] ?? [];
         $isPopular = isset($requestData['is_popular']) ? (int)$requestData['is_popular'] : 0;
+        $isCustom = isset($requestData['is_custom']) ? (int)$requestData['is_custom'] : 0;
         $buttonText = $requestData['button_text'] ?? 'Get Started';
         $sortOrder = (int)($requestData['sort_order'] ?? 0);
 
-        if (empty($name) || $price <= 0) {
-            Auth::jsonError('Plan name and valid price are required.', 400);
+        if (empty($name)) {
+            Auth::jsonError('Plan name is required.', 400);
+        }
+
+        // Price validation: only required if not a custom plan
+        if (!$isCustom && $price <= 0) {
+            Auth::jsonError('Valid price is required for non-custom plans.', 400);
         }
 
         if (!in_array($period, ['month', 'year', 'week'])) {
@@ -1611,11 +1618,25 @@ class OtherController {
             // Encode features as JSON array
             $featuresJson = is_array($features) ? json_encode($features) : '[]';
 
-            DB::query(
-                'INSERT INTO pricing_plans (name, description, price, period, features, is_popular, button_text, sort_order) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                [$name, $description, $price, $period, $featuresJson, $isPopular, $buttonText, $sortOrder]
-            );
+            // Try INSERT with is_custom column first (for updated databases)
+            try {
+                DB::query(
+                    'INSERT INTO pricing_plans (name, description, price, period, features, is_popular, is_custom, button_text, sort_order) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    [$name, $description, $price, $period, $featuresJson, $isPopular, $isCustom, $buttonText, $sortOrder]
+                );
+            } catch (\Exception $e) {
+                // If is_custom column doesn't exist, try without it (for older databases)
+                if (strpos($e->getMessage(), 'is_custom') !== false) {
+                    DB::query(
+                        'INSERT INTO pricing_plans (name, description, price, period, features, is_popular, button_text, sort_order) 
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                        [$name, $description, $price, $period, $featuresJson, $isPopular, $buttonText, $sortOrder]
+                    );
+                } else {
+                    throw $e;
+                }
+            }
             $newId = DB::lastInsertId();
 
             header('Content-Type: application/json');
@@ -1642,11 +1663,17 @@ class OtherController {
         $period = $requestData['period'] ?? 'month';
         $features = $requestData['features'] ?? [];
         $isPopular = isset($requestData['is_popular']) ? (int)$requestData['is_popular'] : 0;
+        $isCustom = isset($requestData['is_custom']) ? (int)$requestData['is_custom'] : 0;
         $buttonText = $requestData['button_text'] ?? 'Get Started';
         $sortOrder = (int)($requestData['sort_order'] ?? 0);
 
-        if (empty($name) || $price <= 0) {
-            Auth::jsonError('Plan name and valid price are required.', 400);
+        if (empty($name)) {
+            Auth::jsonError('Plan name is required.', 400);
+        }
+
+        // Price validation: only required if not a custom plan
+        if (!$isCustom && $price <= 0) {
+            Auth::jsonError('Valid price is required for non-custom plans.', 400);
         }
 
         if (!in_array($period, ['month', 'year', 'week'])) {
@@ -1663,10 +1690,23 @@ class OtherController {
             // Encode features as JSON array
             $featuresJson = is_array($features) ? json_encode($features) : '[]';
 
-            DB::query(
-                'UPDATE pricing_plans SET name = ?, description = ?, price = ?, period = ?, features = ?, is_popular = ?, button_text = ?, sort_order = ? WHERE id = ?',
-                [$name, $description, $price, $period, $featuresJson, $isPopular, $buttonText, $sortOrder, $planId]
-            );
+            // Try UPDATE with is_custom column first (for updated databases)
+            try {
+                DB::query(
+                    'UPDATE pricing_plans SET name = ?, description = ?, price = ?, period = ?, features = ?, is_popular = ?, is_custom = ?, button_text = ?, sort_order = ? WHERE id = ?',
+                    [$name, $description, $price, $period, $featuresJson, $isPopular, $isCustom, $buttonText, $sortOrder, $planId]
+                );
+            } catch (\Exception $e) {
+                // If is_custom column doesn't exist, try without it (for older databases)
+                if (strpos($e->getMessage(), 'is_custom') !== false) {
+                    DB::query(
+                        'UPDATE pricing_plans SET name = ?, description = ?, price = ?, period = ?, features = ?, is_popular = ?, button_text = ?, sort_order = ? WHERE id = ?',
+                        [$name, $description, $price, $period, $featuresJson, $isPopular, $buttonText, $sortOrder, $planId]
+                    );
+                } else {
+                    throw $e;
+                }
+            }
 
             header('Content-Type: application/json');
             echo json_encode(['message' => 'Pricing plan updated successfully.']);
@@ -1726,7 +1766,8 @@ class OtherController {
                 $purchase['plan_price'] = (float)$purchase['plan_price'];
                 $purchase['shop_id'] = $purchase['shop_id'] ? (int)$purchase['shop_id'] : null;
                 // Use payment_method_name if available, otherwise fall back to payment_method
-                if (!empty($purchase['payment_method_name'])) {
+                // But preserve 'custom_request' value for custom plan requests
+                if (!empty($purchase['payment_method_name']) && $purchase['payment_method'] !== 'custom_request') {
                     $purchase['payment_method'] = $purchase['payment_method_name'];
                 }
                 // Include shop registration fields if they exist
@@ -1735,6 +1776,9 @@ class OtherController {
                 $purchase['shop_phone'] = $purchase['shop_phone'] ?? null;
                 $purchase['shop_city'] = $purchase['shop_city'] ?? null;
                 $purchase['shop_country'] = $purchase['shop_country'] ?? null;
+                // Include custom request fields if they exist
+                $purchase['company'] = $purchase['company'] ?? null;
+                $purchase['custom_message'] = $purchase['custom_message'] ?? null;
             }
 
             header('Content-Type: application/json');
@@ -1864,6 +1908,59 @@ class OtherController {
         } catch (\Exception $e) {
             error_log('Delete plan purchase error: ' . $e->getMessage());
             Auth::jsonError('Server error deleting plan purchase.', 500);
+        }
+    }
+
+    public static function createCustomPlanRequest($requestData) {
+        // No authentication required for public custom plan requests (home page)
+        $planId = $requestData['plan_id'] ?? null;
+        $planName = $requestData['plan_name'] ?? '';
+        $name = $requestData['name'] ?? '';
+        $email = $requestData['email'] ?? '';
+        $phone = $requestData['phone'] ?? '';
+        $company = $requestData['company'] ?? '';
+        $message = $requestData['message'] ?? '';
+
+        if (empty($name) || empty($email) || empty($message)) {
+            header('Content-Type: application/json');
+            http_response_code(400);
+            echo json_encode(['error' => 'Name, email, and message are required.']);
+            return;
+        }
+
+        try {
+            // Try INSERT with new columns first (for updated databases)
+            try {
+                DB::query(
+                    'INSERT INTO plan_purchases (plan_id, user_name, user_email, user_phone, company, custom_message, notes, status, payment_method) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    [$planId, $name, $email, $phone, $company, $message, $company . ' - ' . $message, 'pending', 'custom_request']
+                );
+                error_log('Custom plan request created with new columns');
+            } catch (\Exception $e) {
+                // If new columns don't exist, use old method (for older databases)
+                error_log('New columns not available, falling back to old method: ' . $e->getMessage());
+                DB::query(
+                    'INSERT INTO plan_purchases (plan_id, user_name, user_email, user_phone, notes, status, payment_method) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    [$planId, $name, $email, $phone, $company . ' - ' . $message, 'pending', 'custom_request']
+                );
+                error_log('Custom plan request created with fallback method');
+            }
+            $newId = DB::lastInsertId();
+
+            header('Content-Type: application/json');
+            http_response_code(201);
+            echo json_encode([
+                'message' => 'Custom plan request submitted successfully.',
+                'requestId' => (int)$newId
+            ]);
+
+        } catch (\Exception $e) {
+            error_log('Create custom plan request error: ' . $e->getMessage());
+            header('Content-Type: application/json');
+            http_response_code(500);
+            echo json_encode(['error' => 'Server error processing custom plan request: ' . $e->getMessage()]);
         }
     }
 

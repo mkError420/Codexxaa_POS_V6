@@ -3,6 +3,7 @@ import API_BASE_URL from '../config';
 
 export default function PlanPurchases() {
   const [purchases, setPurchases] = useState([]);
+  const [customRequests, setCustomRequests] = useState([]);
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState(null);
@@ -21,6 +22,7 @@ export default function PlanPurchases() {
     admin_email: '',
     admin_password: ''
   });
+  const [activeTab, setActiveTab] = useState('purchases');
 
   const token = () => localStorage.getItem('token');
 
@@ -37,7 +39,9 @@ export default function PlanPurchases() {
       });
       if (response.ok) {
         const data = await response.json();
-        setPurchases(data);
+        // Filter out custom requests from regular purchases
+        setPurchases(data.filter(p => p.payment_method !== 'custom_request'));
+        setCustomRequests(data.filter(p => p.payment_method === 'custom_request'));
       } else {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || `Failed to load plan purchases (${response.status})`);
@@ -283,7 +287,7 @@ export default function PlanPurchases() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Plan Purchases</h2>
-          <p className="text-sm text-slate-500">Manage pricing plan purchases from the home page</p>
+          <p className="text-sm text-slate-500">Manage pricing plan purchases and custom requests from the home page</p>
         </div>
         <button
           onClick={fetchPurchases}
@@ -296,76 +300,103 @@ export default function PlanPurchases() {
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
-          <div className="text-2xl font-bold text-slate-800">{totalPurchases}</div>
-          <div className="text-xs text-slate-500 font-medium mt-0.5">Total Purchases</div>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
-          <div className="text-2xl font-bold text-emerald-600">{approvedPurchases}</div>
-          <div className="text-xs text-slate-500 font-medium mt-0.5">Approved</div>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
-          <div className="text-2xl font-bold text-amber-600">{pendingPurchases}</div>
-          <div className="text-xs text-slate-500 font-medium mt-0.5">Pending</div>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
-          <div className="text-2xl font-bold text-indigo-600">৳{totalRevenue.toFixed(2)}</div>
-          <div className="text-xs text-slate-500 font-medium mt-0.5">Total Revenue</div>
-        </div>
+      {/* Tabs */}
+      <div className="flex gap-2 mt-6">
+        <button
+          onClick={() => setActiveTab('purchases')}
+          className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+            activeTab === 'purchases'
+              ? 'bg-indigo-600 text-white'
+              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          Plan Purchases ({purchases.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('custom')}
+          className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+            activeTab === 'custom'
+              ? 'bg-purple-600 text-white'
+              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          Custom Requests ({customRequests.length})
+        </button>
       </div>
 
-      {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
-                <th className="px-4 py-3">ID</th>
-                <th className="px-4 py-3">Plan</th>
-                <th className="px-4 py-3">Customer</th>
-                <th className="px-4 py-3">Shop Details</th>
-                <th className="px-4 py-3">Amount</th>
-                <th className="px-4 py-3">Transaction ID</th>
-                <th className="px-4 py-3">Payment</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Proof</th>
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-sm">
-              {loading ? (
-                <tr>
-                  <td colSpan="11" className="p-12 text-center">
-                    <div className="flex flex-col items-center gap-3 text-slate-400">
-                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600" />
-                      <span className="text-sm">Loading purchases…</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : purchases.length === 0 ? (
-                <tr>
-                  <td colSpan="11" className="p-12 text-center">
-                    <div className="flex flex-col items-center gap-2 text-slate-400">
-                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                      </svg>
-                      <p className="font-medium">No plan purchases yet</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                purchases.map((purchase) => (
-                  <tr key={purchase.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3.5 font-mono text-xs font-bold text-slate-400">#{purchase.id}</td>
-                    <td className="px-4 py-3.5">
-                      <div>
-                        <p className="font-semibold text-slate-800">{purchase.plan_name || 'Unknown Plan'}</p>
-                        <p className="text-xs text-slate-500">{purchase.plan_period || 'month'}</p>
-                      </div>
-                    </td>
+      {/* Purchases Tab Content */}
+      {activeTab === 'purchases' && (
+        <>
+          {/* Stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+              <div className="text-2xl font-bold text-slate-800">{totalPurchases}</div>
+              <div className="text-xs text-slate-500 font-medium mt-0.5">Total Purchases</div>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+              <div className="text-2xl font-bold text-emerald-600">{approvedPurchases}</div>
+              <div className="text-xs text-slate-500 font-medium mt-0.5">Approved</div>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+              <div className="text-2xl font-bold text-amber-600">{pendingPurchases}</div>
+              <div className="text-xs text-slate-500 font-medium mt-0.5">Pending</div>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+              <div className="text-2xl font-bold text-indigo-600">৳{totalRevenue.toFixed(2)}</div>
+              <div className="text-xs text-slate-500 font-medium mt-0.5">Total Revenue</div>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
+                    <th className="px-4 py-3">ID</th>
+                    <th className="px-4 py-3">Plan</th>
+                    <th className="px-4 py-3">Customer</th>
+                    <th className="px-4 py-3">Shop Details</th>
+                    <th className="px-4 py-3">Amount</th>
+                    <th className="px-4 py-3">Transaction ID</th>
+                    <th className="px-4 py-3">Payment</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Proof</th>
+                    <th className="px-4 py-3">Date</th>
+                    <th className="px-4 py-3 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-sm">
+                  {loading ? (
+                    <tr>
+                      <td colSpan="11" className="p-12 text-center">
+                        <div className="flex flex-col items-center gap-3 text-slate-400">
+                          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600" />
+                          <span className="text-sm">Loading purchases…</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : purchases.length === 0 ? (
+                    <tr>
+                      <td colSpan="11" className="p-12 text-center">
+                        <div className="flex flex-col items-center gap-2 text-slate-400">
+                          <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                          </svg>
+                          <p className="font-medium">No plan purchases yet</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    purchases.map((purchase) => (
+                      <tr key={purchase.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-3.5 font-mono text-xs font-bold text-slate-400">#{purchase.id}</td>
+                        <td className="px-4 py-3.5">
+                          <div>
+                            <p className="font-semibold text-slate-800">{purchase.plan_name || 'Unknown Plan'}</p>
+                            <p className="text-xs text-slate-500">{purchase.plan_period || 'month'}</p>
+                          </div>
+                        </td>
                     <td className="px-4 py-3.5">
                       <div>
                         <p className="font-medium text-slate-800">{purchase.user_name}</p>
@@ -402,15 +433,28 @@ export default function PlanPurchases() {
                         <span className="text-slate-400 text-xs">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3.5 font-bold text-indigo-600">৳{parseFloat(purchase.plan_price || 0).toFixed(2)}</td>
+                    <td className="px-4 py-3.5 font-bold text-indigo-600">
+                      {purchase.payment_method === 'custom_request' ? 'Contact' : '৳' + parseFloat(purchase.plan_price || 0).toFixed(2)}
+                    </td>
                     <td className="px-4 py-3.5">
                       <div>
-                        <p className="font-mono text-xs text-slate-600">{purchase.transaction_id || '—'}</p>
-                        {(purchase.bank_name || purchase.account_number) && (
-                          <p className="text-xs text-slate-400">{purchase.bank_name} - {purchase.account_number}</p>
-                        )}
-                        {purchase.card_last_four && (
-                          <p className="text-xs text-slate-400">Card ****{purchase.card_last_four}</p>
+                        {purchase.payment_method === 'custom_request' ? (
+                          <div className="space-y-1">
+                            <p className="text-xs text-slate-600 font-medium">Custom Request</p>
+                            {purchase.notes && (
+                              <p className="text-xs text-slate-500 max-w-[200px] truncate" title={purchase.notes}>{purchase.notes}</p>
+                            )}
+                          </div>
+                        ) : (
+                          <>
+                            <p className="font-mono text-xs text-slate-600">{purchase.transaction_id || '—'}</p>
+                            {(purchase.bank_name || purchase.account_number) && (
+                              <p className="text-xs text-slate-400">{purchase.bank_name} - {purchase.account_number}</p>
+                            )}
+                            {purchase.card_last_four && (
+                              <p className="text-xs text-slate-400">Card ****{purchase.card_last_four}</p>
+                            )}
+                          </>
                         )}
                       </div>
                     </td>
@@ -503,6 +547,123 @@ export default function PlanPurchases() {
           </table>
         </div>
       </div>
+        </>
+      )}
+
+      {/* Custom Requests Tab Content */}
+      {activeTab === 'custom' && (
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden mt-6">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
+                  <th className="px-4 py-3">ID</th>
+                  <th className="px-4 py-3">Plan</th>
+                  <th className="px-4 py-3">Customer</th>
+                  <th className="px-4 py-3">Contact Info</th>
+                  <th className="px-4 py-3">Company</th>
+                  <th className="px-4 py-3">Message</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Date</th>
+                  <th className="px-4 py-3 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-sm">
+                {loading ? (
+                  <tr>
+                    <td colSpan="9" className="p-12 text-center">
+                      <div className="flex flex-col items-center gap-3 text-slate-400">
+                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600" />
+                        <span className="text-sm">Loading custom requests…</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : customRequests.length === 0 ? (
+                  <tr>
+                    <td colSpan="9" className="p-12 text-center">
+                      <div className="flex flex-col items-center gap-2 text-slate-400">
+                        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                        <p className="font-medium">No custom requests yet</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  customRequests.map((request) => (
+                    <tr key={request.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-3.5 font-mono text-xs font-bold text-slate-400">#{request.id}</td>
+                      <td className="px-4 py-3.5">
+                        <div>
+                          <p className="font-semibold text-slate-800">{request.plan_name || 'Unknown Plan'}</p>
+                          <p className="text-xs text-slate-500">{request.plan_period || 'month'}</p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <div>
+                          <p className="font-medium text-slate-800">{request.user_name}</p>
+                          <p className="text-xs text-slate-500">{request.user_email}</p>
+                          {request.user_phone && (
+                            <p className="text-xs text-slate-400">{request.user_phone}</p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <p className="text-xs text-slate-600">{request.company || '—'}</p>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <p className="text-xs text-slate-600 max-w-[250px] truncate" title={request.custom_message || request.notes || ''}>
+                          {request.custom_message || request.notes || '—'}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-2">
+                          {getStatusBadge(request.status)}
+                          <select
+                            value={request.status}
+                            onChange={(e) => handleQuickStatusChange(request.id, e.target.value)}
+                            className="text-xs border border-slate-200 rounded px-2 py-1 bg-white hover:bg-slate-50 cursor-pointer outline-none focus:ring-2 focus:ring-purple-500"
+                            title="Quick status change"
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                          </select>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 text-xs text-slate-500">
+                        {request.created_at ? new Date(request.created_at).toLocaleDateString() : '—'}
+                      </td>
+                      <td className="px-4 py-3.5 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleEdit(request)}
+                            className="text-indigo-600 hover:text-indigo-800 transition-colors"
+                            title="Edit"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(request.id)}
+                            className="text-rose-500 hover:text-rose-700 transition-colors"
+                            title="Delete"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {showEditModal && selectedPurchase && (

@@ -48,7 +48,18 @@ export default function Home({ onLoginSuccess }) {
   const [paymentProofPreview, setPaymentProofPreview] = useState('');
   const [uploadingProof, setUploadingProof] = useState(false);
   const [proofUploadError, setProofUploadError] = useState('');
-
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [selectedCustomPlan, setSelectedCustomPlan] = useState(null);
+  const [contactForm, setContactForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    company: '',
+    message: ''
+  });
+  const [contactLoading, setContactLoading] = useState(false);
+  const [contactError, setContactError] = useState('');
+  const [contactSuccess, setContactSuccess] = useState(false);
   const scrollToSection = (sectionId) => {
     setActiveSection(sectionId);
     const element = document.getElementById(sectionId);
@@ -182,6 +193,67 @@ export default function Home({ onLoginSuccess }) {
     setPaymentProofFile(null);
     setPaymentProofPreview('');
     setProofUploadError('');
+  };
+
+  const handleContactForPricing = (plan) => {
+    setSelectedCustomPlan(plan);
+    setShowContactModal(true);
+    setContactError('');
+    setContactSuccess(false);
+    setContactForm({
+      name: '',
+      email: '',
+      phone: '',
+      company: '',
+      message: ''
+    });
+  };
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    setContactError('');
+    setContactLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/custom-plan-requests`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+          plan_id: selectedCustomPlan.id,
+          plan_name: selectedCustomPlan.name,
+          name: contactForm.name,
+          email: contactForm.email,
+          phone: contactForm.phone,
+          company: contactForm.company,
+          message: contactForm.message
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to submit contact request');
+      }
+
+      setContactSuccess(true);
+      setTimeout(() => {
+        setShowContactModal(false);
+        setContactSuccess(false);
+        setContactForm({
+          name: '',
+          email: '',
+          phone: '',
+          company: '',
+          message: ''
+        });
+      }, 2000);
+    } catch (err) {
+      setContactError(err.message || 'Failed to submit contact request');
+    } finally {
+      setContactLoading(false);
+    }
   };
 
   const handleProceedToPayment = (e) => {
@@ -612,38 +684,58 @@ export default function Home({ onLoginSuccess }) {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-6">
             {pricingPlans.map((plan) => (
-              <div key={plan.id} className={`${plan.is_popular ? 'bg-gradient-to-b from-yellow-400/20 to-amber-400/20 backdrop-blur-xl border-2 border-yellow-400 rounded-3xl p-8 relative transform scale-105 shadow-2xl shadow-yellow-400/30' : 'bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 hover:border-indigo-500/50 transition-all duration-300'}`}>
-                {plan.is_popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-amber-400 text-white text-xs font-bold px-4 py-1 rounded-full">
+              <div key={plan.id} className={`${plan.is_custom ? 'bg-[#3C4142] backdrop-blur-xl border-2 border-[#3C4142] rounded-2xl p-5 relative shadow-2xl' : plan.is_popular ? 'bg-gradient-to-b from-yellow-400/20 to-amber-400/20 backdrop-blur-xl border-2 border-yellow-400 rounded-2xl p-5 relative transform scale-105 shadow-2xl shadow-yellow-400/30' : 'bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-5 hover:border-indigo-500/50 transition-all duration-300'}`}>
+                {plan.is_custom && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#3C4142] text-white text-xs font-bold px-3 py-0.5 rounded-full">
+                    CUSTOM
+                  </div>
+                )}
+                {plan.is_popular && !plan.is_custom && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-amber-400 text-white text-xs font-bold px-3 py-0.5 rounded-full">
                     MOST POPULAR
                   </div>
                 )}
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
-                  <p className="text-slate-400 text-sm">{plan.description}</p>
+                <div className="mb-4">
+                  <h3 className="text-xl font-bold text-white mb-1">{plan.name}</h3>
+                  <p className="text-slate-400 text-xs">{plan.description}</p>
                 </div>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold text-white">BDT {plan.price}</span>
-                  <span className="text-slate-400 text-sm">/{plan.period}</span>
+                <div className="mb-4">
+                  {plan.is_custom ? (
+                    <span className="text-3xl font-bold text-white">Contact Us</span>
+                  ) : (
+                    <>
+                      <span className="text-3xl font-bold text-white">BDT {plan.price}</span>
+                      <span className="text-slate-400 text-xs">/{plan.period}</span>
+                    </>
+                  )}
                 </div>
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-2 mb-5">
                   {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-center gap-3 text-slate-300 text-sm">
-                      <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <li key={index} className="flex items-center gap-2 text-slate-300 text-xs">
+                      <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                       </svg>
                       {feature}
                     </li>
                   ))}
                 </ul>
-                <button
-                  onClick={() => handlePurchasePlan(plan)}
-                  className="w-full py-3 ${plan.is_popular ? 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500' : 'bg-slate-700 hover:bg-slate-600'} text-white font-semibold rounded-xl transition-all duration-200 shadow-lg"
-                >
-                  {plan.button_text}
-                </button>
+                {plan.is_custom ? (
+                  <button
+                    onClick={() => handleContactForPricing(plan)}
+                    className="w-full py-2.5 bg-[#3C4142] hover:bg-[#2c3031] text-white font-semibold rounded-lg transition-all duration-200 shadow-lg text-sm"
+                  >
+                    Contact for Pricing
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handlePurchasePlan(plan)}
+                    className="w-full py-2.5 ${plan.is_popular ? 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500' : 'bg-slate-700 hover:bg-slate-600'} text-white font-semibold rounded-lg transition-all duration-200 shadow-lg text-sm"
+                  >
+                    {plan.button_text}
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -784,81 +876,88 @@ export default function Home({ onLoginSuccess }) {
               </div>
             ) : showPaymentStep ? (
               <form onSubmit={handlePurchaseSubmit} className="space-y-4">
-                {/* Order Summary */}
-                <div className="bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border border-indigo-700/50 rounded-xl p-4 mb-4">
-                  <h4 className="text-sm font-semibold text-indigo-300 mb-3 flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {/* Order Summary and Payment Instructions in same row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  {/* Order Summary */}
+                  <div className="bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border border-indigo-700/50 rounded-xl p-4">
+                    <h4 className="text-sm font-semibold text-indigo-300 mb-3 flex items-center gap-2">
+                   {/*  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                    Order Summary
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Plan:</span>
-                      <span className="text-white font-medium">{selectedPlan.name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Period:</span>
-                      <span className="text-white">{selectedPlan.period}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Payment Method:</span>
-                      <span className="text-white font-medium">{selectedPaymentMethod?.name || 'Other'}</span>
-                    </div>
-                    <div className="border-t border-slate-600 pt-2 mt-2 flex justify-between">
-                      <span className="text-slate-300 font-semibold">Total Amount:</span>
-                      <span className="text-xl font-bold text-emerald-400">BDT {selectedPlan.price}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Payment Instructions */}
-                {selectedPaymentMethod && (
-                  <div className="bg-amber-900/20 border border-amber-700/50 rounded-xl p-4 mb-4">
-                    <h4 className="text-sm font-semibold text-amber-300 mb-3 flex items-center gap-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Payment Instructions
+                    </svg> */}
+                      Order Summary
                     </h4>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Send payment to:</span>
-                        <span className="text-white font-medium">{selectedPaymentMethod.name}</span>
+                        <span className="text-slate-400">Plan:</span>
+                        <span className="text-white font-medium">{selectedPlan.name}</span>
                       </div>
-                      {selectedPaymentMethod.phone_number && (
-                        <div className="flex justify-between">
-                          <span className="text-slate-400">Number:</span>
-                          <span className="text-white font-mono bg-slate-700/50 px-2 py-0.5 rounded">{selectedPaymentMethod.phone_number}</span>
-                        </div>
-                      )}
-                      {selectedPaymentMethod.account_number && (
-                        <div className="flex justify-between">
-                          <span className="text-slate-400">Account:</span>
-                          <span className="text-white font-mono bg-slate-700/50 px-2 py-0.5 rounded">{selectedPaymentMethod.account_number}</span>
-                        </div>
-                      )}
-                      {selectedPaymentMethod.account_holder && (
-                        <div className="flex justify-between">
-                          <span className="text-slate-400">Account Holder:</span>
-                          <span className="text-white">{selectedPaymentMethod.account_holder}</span>
-                        </div>
-                      )}
-                      {selectedPaymentMethod.branch_name && (
-                        <div className="flex justify-between">
-                          <span className="text-slate-400">Branch:</span>
-                          <span className="text-white">{selectedPaymentMethod.branch_name}</span>
-                        </div>
-                      )}
-                      {selectedPaymentMethod.routing_number && (
-                        <div className="flex justify-between">
-                          <span className="text-slate-400">Routing Number:</span>
-                          <span className="text-white font-mono">{selectedPaymentMethod.routing_number}</span>
-                        </div>
-                      )}
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Period:</span>
+                        <span className="text-white">{selectedPlan.period}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Payment Method:</span>
+                        <span className="text-white font-medium">{selectedPaymentMethod?.name || 'Other'}</span>
+                      </div>
+                      <div className="border-t border-slate-600 pt-2 mt-2 flex justify-between">
+                        <span className="text-slate-300 font-semibold">Total Amount:</span>
+                        <span className="text-xl font-bold text-emerald-400">BDT {selectedPlan.price}</span>
+                      </div>
                     </div>
                   </div>
-                )}
+
+                  {/* Payment Instructions */}
+                  {selectedPaymentMethod ? (
+                    <div className="bg-amber-900/20 border border-amber-700/50 rounded-xl p-4">
+                      <h4 className="text-sm font-semibold text-amber-300 mb-3 flex items-center gap-2">
+                   {/*    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg> */}
+                        Payment Instructions
+                      </h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Send payment to:</span>
+                          <span className="text-white font-medium">{selectedPaymentMethod.name}</span>
+                        </div>
+                        {selectedPaymentMethod.phone_number && (
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Number:</span>
+                            <span className="text-white font-mono bg-slate-700/50 px-2 py-0.5 rounded">{selectedPaymentMethod.phone_number}</span>
+                          </div>
+                        )}
+                        {selectedPaymentMethod.account_number && (
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Account:</span>
+                            <span className="text-white font-mono bg-slate-700/50 px-2 py-0.5 rounded">{selectedPaymentMethod.account_number}</span>
+                          </div>
+                        )}
+                        {selectedPaymentMethod.account_holder && (
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Account Holder:</span>
+                            <span className="text-white">{selectedPaymentMethod.account_holder}</span>
+                          </div>
+                        )}
+                        {selectedPaymentMethod.branch_name && (
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Branch:</span>
+                            <span className="text-white">{selectedPaymentMethod.branch_name}</span>
+                          </div>
+                        )}
+                        {selectedPaymentMethod.routing_number && (
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Routing Number:</span>
+                            <span className="text-white font-mono">{selectedPaymentMethod.routing_number}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-slate-700/30 border border-slate-600 rounded-xl p-4 flex items-center justify-center">
+                      <p className="text-slate-400 text-sm">No payment method selected</p>
+                    </div>
+                  )}
+                </div>
 
                 {purchaseError && (
                   <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-3 text-rose-300 text-sm">
@@ -866,12 +965,13 @@ export default function Home({ onLoginSuccess }) {
                   </div>
                 )}
 
-                {/* Payment Details Form */}
-                <div className="bg-slate-700/30 border border-slate-600 rounded-xl p-4">
+                {/* Payment Details Form - Only show if payment method is selected */}
+                {selectedPaymentMethod && (
+                  <div className="bg-slate-700/30 border border-slate-600 rounded-xl p-4">
                   <h4 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+{/*                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                    </svg>
+                    </svg> */}
                     Payment Details
                   </h4>
                   
@@ -890,7 +990,7 @@ export default function Home({ onLoginSuccess }) {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-medium text-slate-300 mb-1.5">Bank Name</label>
+                        <label className="block text-xs font-medium text-slate-300 mb-1.5">Bank Name(Optional)</label>
                         <input
                           type="text"
                           value={paymentDetails.bank_name}
@@ -901,7 +1001,7 @@ export default function Home({ onLoginSuccess }) {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-slate-300 mb-1.5">Account Number</label>
+                        <label className="block text-xs font-medium text-slate-300 mb-1.5">Account Number(Optional)</label>
                         <input
                           type="text"
                           value={paymentDetails.account_number}
@@ -913,7 +1013,7 @@ export default function Home({ onLoginSuccess }) {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-slate-300 mb-1.5">Card Last 4 Digits</label>
+                      <label className="block text-xs font-medium text-slate-300 mb-1.5">Card Last 4 Digits(Optional)</label>
                       <input
                         type="text"
                         maxLength="4"
@@ -935,9 +1035,11 @@ export default function Home({ onLoginSuccess }) {
                     </div>
                   </div>
                 </div>
+                )}
 
-                {/* Payment Proof Upload */}
-                <div className="bg-slate-700/30 border border-slate-600 rounded-xl p-4">
+                {/* Payment Proof Upload - Only show if payment method is selected */}
+                {selectedPaymentMethod && (
+                  <div className="bg-slate-700/30 border border-slate-600 rounded-xl p-4">
                   <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -1010,6 +1112,7 @@ export default function Home({ onLoginSuccess }) {
                     <p className="mt-1.5 text-rose-400 text-xs">{proofUploadError}</p>
                   )}
                 </div>
+                )}
 
                 <div className="flex gap-3">
                   <button
@@ -1193,6 +1296,117 @@ export default function Home({ onLoginSuccess }) {
                   className="w-full bg-gradient-to-r from-gray-600 to-gray-600 hover:from-gray-700 hover:to-gray-700 text-white font-semibold rounded-xl py-3 text-sm transition-all duration-200 shadow-lg"
                 >
                   Proceed to Payment
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Contact Modal for Custom Plans */}
+      {showContactModal && selectedCustomPlan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-white">Contact for Pricing</h3>
+              <button
+                onClick={() => setShowContactModal(false)}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {contactSuccess ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h4 className="text-xl font-bold text-white mb-2">Request Submitted!</h4>
+                <p className="text-slate-400">We'll get back to you soon with pricing information.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleContactSubmit} className="space-y-4">
+                <div className="bg-indigo-900/20 border border-indigo-700/50 rounded-xl p-4 mb-4">
+                  <p className="text-sm text-indigo-300">
+                    <span className="font-semibold">Plan:</span> {selectedCustomPlan.name}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={contactForm.name}
+                    onChange={(e) => setContactForm({...contactForm, name: e.target.value})}
+                    className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter your full name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Email *</label>
+                  <input
+                    type="email"
+                    required
+                    value={contactForm.email}
+                    onChange={(e) => setContactForm({...contactForm, email: e.target.value})}
+                    className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter your email"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={contactForm.phone}
+                    onChange={(e) => setContactForm({...contactForm, phone: e.target.value})}
+                    className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter your phone number"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Company Name</label>
+                  <input
+                    type="text"
+                    value={contactForm.company}
+                    onChange={(e) => setContactForm({...contactForm, company: e.target.value})}
+                    className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter your company name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Message *</label>
+                  <textarea
+                    required
+                    value={contactForm.message}
+                    onChange={(e) => setContactForm({...contactForm, message: e.target.value})}
+                    className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                    placeholder="Tell us about your requirements..."
+                    rows="3"
+                  />
+                </div>
+
+                {contactError && (
+                  <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-3 text-rose-300 text-sm">
+                    {contactError}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={contactLoading}
+                  className="w-full bg-gray-400 hover:bg-gray-500 text-white font-semibold rounded-xl py-3 text-sm transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {contactLoading ? 'Submitting...' : 'Submit Request'}
                 </button>
               </form>
             )}
