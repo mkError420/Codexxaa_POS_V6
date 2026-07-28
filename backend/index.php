@@ -73,6 +73,7 @@ require_once __DIR__ . '/controllers/ManualOrderController.php';
 require_once __DIR__ . '/controllers/OtherController.php';
 require_once __DIR__ . '/controllers/OtherSalesController.php';
 require_once __DIR__ . '/controllers/TransactionController.php';
+require_once __DIR__ . '/controllers/ChatController.php';
 
 // Parse Request URI and Method
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -295,12 +296,68 @@ $routes = [
         // Payment Methods (public endpoint for purchase modal)
         '/^payment-methods$/' => function() { OtherController::listPaymentMethods(); },
         '/^payment-methods\/active$/' => function() { OtherController::getActivePaymentMethods(); },
+        // Chat (public endpoint for visitors - only for fetching their own session)
+        '/^chat\/sessions\/(\d+)\/messages$/' => function($args) { 
+            $pdo = DB::getConnection();
+            $controller = new ChatController($pdo);
+            $result = $controller->getMessages($args[0]);
+            header('Content-Type: application/json');
+            echo json_encode($result);
+        },
+        // Chat (admin-only endpoints)
+        '/^admin\/chat\/sessions$/' => function() { 
+            require_once __DIR__ . '/middleware/auth.php';
+            Auth::authenticate();
+            Auth::authorize(['super_admin']);
+            $pdo = DB::getConnection();
+            $controller = new ChatController($pdo);
+            $result = $controller->getAllSessions();
+            header('Content-Type: application/json');
+            echo json_encode($result);
+        },
+        '/^admin\/chat\/sessions\/(\d+)$/' => function($args) { 
+            require_once __DIR__ . '/middleware/auth.php';
+            Auth::authenticate();
+            Auth::authorize(['super_admin']);
+            $pdo = DB::getConnection();
+            $controller = new ChatController($pdo);
+            $result = $controller->getSession($args[0]);
+            header('Content-Type: application/json');
+            echo json_encode($result);
+        },
     ],
     'POST' => [
         // File Uploads (public - no auth required for plan purchase proof)
         '/^upload\/payment-proof$/' => function($args, $data) { OtherController::uploadPaymentProof(); },
         // Custom Plan Requests (public endpoint for contact form)
         '/^custom-plan-requests$/' => function($args, $data) { OtherController::createCustomPlanRequest($data); },
+        // Chat (public endpoint for visitors - create session)
+        '/^chat\/sessions$/' => function($args, $data) { 
+            $pdo = DB::getConnection();
+            $controller = new ChatController($pdo);
+            $result = $controller->createSession($data);
+            header('Content-Type: application/json');
+            echo json_encode($result);
+        },
+        // Chat (public endpoint for visitors - send message)
+        '/^chat\/messages$/' => function($args, $data) { 
+            $pdo = DB::getConnection();
+            $controller = new ChatController($pdo);
+            $result = $controller->sendMessage($data);
+            header('Content-Type: application/json');
+            echo json_encode($result);
+        },
+        // Chat (admin-only - send message)
+        '/^admin\/chat\/messages$/' => function($args, $data) { 
+            require_once __DIR__ . '/middleware/auth.php';
+            Auth::authenticate();
+            Auth::authorize(['super_admin']);
+            $pdo = DB::getConnection();
+            $controller = new ChatController($pdo);
+            $result = $controller->sendMessage($data);
+            header('Content-Type: application/json');
+            echo json_encode($result);
+        },
         // Auth
         '/^auth\/login$/' => function($args, $data) { AuthController::login($data); },
         '/^auth\/register-shop$/' => function($args, $data) { AuthController::registerShop($data); },
@@ -393,6 +450,17 @@ $routes = [
         '/^payment-methods\/(\d+)$/' => function($args, $data) { OtherController::updatePaymentMethod($args[0], $data); },
         // Site Settings
         '/^settings\/site$/' => function($args, $data) { OtherController::updateSiteSettings($data); },
+        // Chat (admin endpoint for managing sessions)
+        '/^admin\/chat\/sessions\/(\d+)\/status$/' => function($args, $data) { 
+            require_once __DIR__ . '/middleware/auth.php';
+            Auth::authenticate();
+            Auth::authorize(['super_admin']);
+            $pdo = DB::getConnection();
+            $controller = new ChatController($pdo);
+            $result = $controller->updateSessionStatus($args[0], $data['status']);
+            header('Content-Type: application/json');
+            echo json_encode($result);
+        },
     ],
     'DELETE' => [
         // Products
@@ -432,6 +500,17 @@ $routes = [
         '/^plan-purchases\/(\d+)$/' => function($args) { OtherController::deletePlanPurchase($args[0]); },
         // Payment Methods
         '/^payment-methods\/(\d+)$/' => function($args) { OtherController::deletePaymentMethod($args[0]); },
+        // Chat (admin endpoint for deleting sessions)
+        '/^admin\/chat\/sessions\/(\d+)$/' => function($args) { 
+            require_once __DIR__ . '/middleware/auth.php';
+            Auth::authenticate();
+            Auth::authorize(['super_admin']);
+            $pdo = DB::getConnection();
+            $controller = new ChatController($pdo);
+            $result = $controller->deleteSession($args[0]);
+            header('Content-Type: application/json');
+            echo json_encode($result);
+        },
     ]
 ];
 

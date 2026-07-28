@@ -9,7 +9,8 @@ export default function DashboardLayout({
   currentPath = '/dashboard',
   onNavigate,
   onLogout = () => console.log('Logged out'),
-  heldBillsCount = 0
+  heldBillsCount = 0,
+  unreadChatCount = 0
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -45,6 +46,7 @@ export default function DashboardLayout({
         currentPath={currentPath}
         onNavigate={onNavigate}
         heldBillsCount={heldBillsCount}
+        unreadChatCount={unreadChatCount}
       />
 
       {/* 2. Main Page Framework */}

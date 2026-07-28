@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import API_BASE_URL from '../config';
+import ChatWidget from './ChatWidget';
 
 export default function Home({ onLoginSuccess }) {
   const [email, setEmail] = useState('');
@@ -1413,6 +1414,9 @@ export default function Home({ onLoginSuccess }) {
           </div>
         </div>
       )}
+
+      {/* Live Chat Widget */}
+      <ChatWidget />
     </div>
   );
 };

@@ -24,6 +24,7 @@ import Wastage from './components/Wastage';
 import Returns from './components/Returns';
 import ManualOrders from './components/ManualOrders';
 import AllTransactions from './components/AllTransactions';
+import AdminChat from './components/AdminChat';
 
 import API_BASE_URL from './config';
 
@@ -56,6 +57,7 @@ export default function App() {
   const [lowStockAlerts, setLowStockAlerts] = useState([]);
   const [expiryAlerts, setExpiryAlerts] = useState([]);
   const [heldBillsCount, setHeldBillsCount] = useState(0);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [resumedHeldBill, setResumedHeldBill] = useState(null);
 
   // On mount: verify existing token against the backend
@@ -189,6 +191,18 @@ export default function App() {
             const heldData = await heldResponse.json();
             setHeldBillsCount(heldData.filter(bill => bill.status === 'held').length);
           }
+        } else {
+          // For super admin, fetch unread chat count
+          const chatResponse = await fetch(`${API_BASE_URL}/admin/chat/sessions`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (chatResponse.ok) {
+            const chatData = await chatResponse.json();
+            if (chatData.success && chatData.sessions) {
+              const totalUnread = chatData.sessions.reduce((sum, session) => sum + (session.unread_count || 0), 0);
+              setUnreadChatCount(totalUnread);
+            }
+          }
         }
       } catch (e) {
         console.error('Session detail load failed:', e);
@@ -197,6 +211,39 @@ export default function App() {
 
     loadSessionDetails();
   }, [user?.role, currentPath]);
+
+  // Poll for unread chat count every 30 seconds for super admin
+  useEffect(() => {
+    if (!user || user.role !== 'super_admin') return;
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const fetchUnreadCount = async () => {
+      try {
+        const chatResponse = await fetch(`${API_BASE_URL}/admin/chat/sessions`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (chatResponse.ok) {
+          const chatData = await chatResponse.json();
+          if (chatData.success && chatData.sessions) {
+            const totalUnread = chatData.sessions.reduce((sum, session) => sum + (session.unread_count || 0), 0);
+            setUnreadChatCount(totalUnread);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch unread chat count:', e);
+      }
+    };
+
+    // Initial fetch
+    fetchUnreadCount();
+
+    // Poll every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+
+    return () => clearInterval(interval);
+  }, [user]);
 
   // Called by Login component on successful authentication
   const handleLoginSuccess = (userObj) => {
@@ -233,6 +280,7 @@ export default function App() {
         case '/plan-purchases': return <PlanPurchases />;
         case '/payment-methods': return <PaymentMethods />;
         case '/settings': return <Settings />;
+        case '/admin-chat': return <AdminChat onUnreadCountChange={setUnreadChatCount} />;
         default: return <Dashboard />;
       }
     }
@@ -332,6 +380,7 @@ export default function App() {
       lowStockItems={lowStockAlerts}
       expiryItems={expiryAlerts}
       heldBillsCount={heldBillsCount}
+      unreadChatCount={unreadChatCount}
       currentPath={currentPath}
       onNavigate={(path) => setCurrentPath(path)}
       onLogout={handleLogout}
