@@ -1397,7 +1397,7 @@ export default function Checkout({ onHeldBillsChange = () => { }, resumedHeldBil
                         <th className="p-3 pl-4">Product Name</th>
                         <th className="p-3 text-right">Price</th>
                         <th className="p-3 text-center">Stock</th>
-                        <th className="p-3 text-center">Actions</th>
+                        <th className="hidden p-3 text-center">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-sm">
@@ -1424,7 +1424,7 @@ export default function Checkout({ onHeldBillsChange = () => { }, resumedHeldBil
                                 {remainingQty} {product.unit || 'pcs'} left
                               </span>
                             </td>
-                            <td className="p-3 text-center">
+                            <td className="hidden p-3 text-center">
                               {inCartItem ? (
                                 <div className="flex items-center justify-center space-x-2">
                                   <button
@@ -1454,7 +1454,7 @@ export default function Checkout({ onHeldBillsChange = () => { }, resumedHeldBil
                                 <button
                                   onClick={() => addToCart(product)}
                                   disabled={isOutOfStock}
-                                  className="bg-slate-600 hover:bg-indigo-700 text-white disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed text-xs font-bold px-3 py-1.5 rounded-lg transition-colors shadow-xs"
+                                  className="hidden bg-slate-600 hover:bg-indigo-700 text-white disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed text-xs font-bold px-3 py-1.5 rounded-lg transition-colors shadow-xs"
                                 >
                                   {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
                                 </button>

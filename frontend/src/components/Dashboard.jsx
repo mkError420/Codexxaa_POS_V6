@@ -14,7 +14,11 @@ export default function Dashboard({ onNavigate = () => { } }) {
     total_shops: 0,
     active_shops: 0,
     total_users: 0,
-    global_revenue: '0.00'
+    global_revenue: '0.00',
+    average_order_value: '0.00',
+    total_due_amount: '0.00',
+    held_bills_count: 0,
+    profit_margin: '0.00'
   });
   const [recentSales, setRecentSales] = useState([]);
   const [tenantBreakdown, setTenantBreakdown] = useState([]);
@@ -22,10 +26,16 @@ export default function Dashboard({ onNavigate = () => { } }) {
   const [paymentBreakdown, setPaymentBreakdown] = useState([]);
   const [topSelling, setTopSelling] = useState([]);
   const [deadStock, setDeadStock] = useState([]);
+  const [lowStockItems, setLowStockItems] = useState([]);
+  const [customerInsights, setCustomerInsights] = useState([]);
+  const [staffPerformance, setStaffPerformance] = useState([]);
+  const [categoryBreakdown, setCategoryBreakdown] = useState([]);
   const [chartType, setChartType] = useState('revenue'); // 'revenue' or 'sales'
   const [hoveredPoint, setHoveredPoint] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [dateRange, setDateRange] = useState('7days'); // '7days', '30days', '90days', 'all'
+  const [lastRefresh, setLastRefresh] = useState(new Date());
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -61,6 +71,19 @@ export default function Dashboard({ onNavigate = () => { } }) {
       if (data.dead_stock) {
         setDeadStock(data.dead_stock);
       }
+      if (data.low_stock_items) {
+        setLowStockItems(data.low_stock_items);
+      }
+      if (data.customer_insights) {
+        setCustomerInsights(data.customer_insights);
+      }
+      if (data.staff_performance) {
+        setStaffPerformance(data.staff_performance);
+      }
+      if (data.category_breakdown) {
+        setCategoryBreakdown(data.category_breakdown);
+      }
+      setLastRefresh(new Date());
     } catch (err) {
       console.error(err);
       setError(err.message);
@@ -390,9 +413,34 @@ export default function Dashboard({ onNavigate = () => { } }) {
     <div className="space-y-6">
 
       {/* 1. Header Row */}
-      <div>
-        <h2 className="text-2xl font-bold text-slate-800">Shop Overview</h2>
-        <p className="text-sm text-slate-500">Real-time performance indicators and inventory state</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800">Shop Overview</h2>
+          <p className="text-sm text-slate-500">Real-time performance indicators and inventory state</p>
+        </div>
+        <div className="flex items-center space-x-3">
+          {/* Date Range Filter */}
+          <select
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value)}
+            className="text-xs font-semibold bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-600 outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="7days">Last 7 Days</option>
+            <option value="30days">Last 30 Days</option>
+            <option value="90days">Last 90 Days</option>
+            <option value="all">All Time</option>
+          </select>
+          {/* Refresh Button */}
+          <button
+            onClick={fetchDashboardData}
+            className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-colors"
+            title="Refresh Data"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* 2. Key Metrics Grid */}
@@ -411,6 +459,45 @@ export default function Dashboard({ onNavigate = () => { } }) {
           </div>
         </div>
 
+        {/* Average Order Value */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex items-center space-x-4">
+          <div className="p-3 bg-cyan-50 text-cyan-600 rounded-xl">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Avg Order Value</p>
+            <h3 className="text-2xl font-extrabold text-slate-800 mt-0.5">৳{parseFloat(metrics.average_order_value || 0).toFixed(2)}</h3>
+          </div>
+        </div>
+
+        {/* Total Due Amount */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex items-center space-x-4">
+          <div className={`p-3 rounded-xl ${parseFloat(metrics.total_due_amount || 0) > 0 ? 'bg-orange-50 text-orange-600' : 'bg-slate-50 text-slate-400'}`}>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Due Amount</p>
+            <h3 className={`text-2xl font-extrabold mt-0.5 ${parseFloat(metrics.total_due_amount || 0) > 0 ? 'text-orange-600' : 'text-slate-800'}`}>৳{parseFloat(metrics.total_due_amount || 0).toFixed(2)}</h3>
+          </div>
+        </div>
+
+        {/* Held Bills */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex items-center space-x-4">
+          <div className={`p-3 rounded-xl ${metrics.held_bills_count > 0 ? 'bg-purple-50 text-purple-600' : 'bg-slate-50 text-slate-400'}`}>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Held Bills</p>
+            <h3 className={`text-2xl font-extrabold mt-0.5 ${metrics.held_bills_count > 0 ? 'text-purple-600' : 'text-slate-800'}`}>{metrics.held_bills_count || 0}</h3>
+          </div>
+        </div>
+
         {/* Total Sales */}
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex items-center space-x-4">
           <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
@@ -421,6 +508,19 @@ export default function Dashboard({ onNavigate = () => { } }) {
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sales Count</p>
             <h3 className="text-2xl font-extrabold text-slate-800 mt-0.5">{metrics.total_sales}</h3>
+          </div>
+        </div>
+
+        {/* Profit Margin */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex items-center space-x-4">
+          <div className={`p-3 rounded-xl ${parseFloat(metrics.profit_margin || 0) >= 20 ? 'bg-green-50 text-green-600' : parseFloat(metrics.profit_margin || 0) >= 10 ? 'bg-yellow-50 text-yellow-600' : 'bg-rose-50 text-rose-600'}`}>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Profit Margin</p>
+            <h3 className={`text-2xl font-extrabold mt-0.5 ${parseFloat(metrics.profit_margin || 0) >= 20 ? 'text-green-600' : parseFloat(metrics.profit_margin || 0) >= 10 ? 'text-yellow-600' : 'text-rose-600'}`}>{parseFloat(metrics.profit_margin || 0).toFixed(1)}%</h3>
           </div>
         </div>
 
@@ -915,6 +1015,254 @@ export default function Dashboard({ onNavigate = () => { } }) {
           </div>
         </div>
       )}
+
+      {/* Low Stock Items Section */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-slate-800">Low Stock Alert Items</h3>
+            <p className="text-xs text-slate-500">Products that need immediate restocking</p>
+          </div>
+          <span className="bg-rose-50 text-rose-700 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-rose-100 uppercase tracking-wider">
+            {lowStockItems.length} Items
+          </span>
+        </div>
+
+        {lowStockItems.length === 0 ? (
+          <div className="h-32 flex flex-col items-center justify-center text-slate-400 text-sm bg-emerald-50/50 rounded-xl border border-dashed border-emerald-200">
+            <svg className="w-8 h-8 text-emerald-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>All products are well stocked!</span>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
+                  <th className="p-3 pl-4">Product Name</th>
+                  <th className="p-3">SKU</th>
+                  <th className="p-3 text-center">Current Stock</th>
+                  <th className="p-3 text-center">Low Stock Threshold</th>
+                  <th className="p-3 text-right pr-4">Unit Price</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {lowStockItems.map((item) => (
+                  <tr key={item.id} className="hover:bg-rose-50/20 transition-colors">
+                    <td className="p-3 pl-4 font-semibold text-slate-700 max-w-[200px] truncate" title={item.name}>
+                      {item.name}
+                    </td>
+                    <td className="p-3 text-slate-550 font-mono text-xs">{item.sku}</td>
+                    <td className="p-3 text-center font-bold text-rose-600">
+                      {item.stock_quantity} {item.unit || 'pcs'}
+                    </td>
+                    <td className="p-3 text-center text-slate-600 font-medium">
+                      {item.low_stock_threshold} {item.unit || 'pcs'}
+                    </td>
+                    <td className="p-3 text-right pr-4 text-slate-700 font-semibold">
+                      ৳{parseFloat(item.price).toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Customer Insights Section */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-slate-800">Customer Insights</h3>
+            <p className="text-xs text-slate-500">Top customers and recent activity</p>
+          </div>
+        </div>
+
+        {customerInsights.length === 0 ? (
+          <div className="h-32 flex flex-col items-center justify-center text-slate-400 text-sm bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+            <svg className="w-8 h-8 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <span>No customer data available yet.</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {customerInsights.slice(0, 6).map((customer, idx) => (
+              <div key={customer.id} className="border border-slate-100 rounded-xl p-4 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all">
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
+                    {customer.name?.charAt(0).toUpperCase() || 'C'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-slate-800 truncate">{customer.name}</h4>
+                    <p className="text-xs text-slate-500">{customer.phone || 'No phone'}</p>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-500">{customer.total_orders || 0} orders</span>
+                  <span className="font-bold text-indigo-600">৳{parseFloat(customer.total_spent || 0).toFixed(2)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Staff Performance Section */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-slate-800">Staff Performance</h3>
+            <p className="text-xs text-slate-500">Sales team performance metrics</p>
+          </div>
+        </div>
+
+        {staffPerformance.length === 0 ? (
+          <div className="h-32 flex flex-col items-center justify-center text-slate-400 text-sm bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+            <svg className="w-8 h-8 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <span>No staff performance data available.</span>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
+                  <th className="p-3 pl-4">Staff Name</th>
+                  <th className="p-3 text-center">Total Sales</th>
+                  <th className="p-3 text-right">Revenue Generated</th>
+                  <th className="p-3 text-right pr-4">Avg Order Value</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {staffPerformance.map((staff, idx) => (
+                  <tr key={staff.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="p-3 pl-4 font-semibold text-slate-800">
+                      <div className="flex items-center space-x-2">
+                        <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center">
+                          {idx + 1}
+                        </span>
+                        <span>{staff.name}</span>
+                      </div>
+                    </td>
+                    <td className="p-3 text-center text-slate-600 font-medium">{staff.total_sales || 0}</td>
+                    <td className="p-3 text-right font-extrabold text-indigo-600">
+                      ৳{parseFloat(staff.total_revenue || 0).toFixed(2)}
+                    </td>
+                    <td className="p-3 text-right pr-4 text-slate-700 font-semibold">
+                      ৳{parseFloat(staff.avg_order_value || 0).toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Category Sales Breakdown */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-slate-800">Sales by Category</h3>
+            <p className="text-xs text-slate-500">Revenue distribution across product categories</p>
+          </div>
+        </div>
+
+        {categoryBreakdown.length === 0 ? (
+          <div className="h-32 flex flex-col items-center justify-center text-slate-400 text-sm bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+            <svg className="w-8 h-8 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+            <span>No category data available.</span>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {categoryBreakdown.map((category, idx) => {
+              const maxRevenue = categoryBreakdown[0]?.total_revenue || 1;
+              const percentage = (category.total_revenue / maxRevenue) * 100;
+              const colors = ['bg-indigo-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-purple-500', 'bg-cyan-500'];
+              const colorClass = colors[idx % colors.length];
+
+              return (
+                <div key={category.id} className="space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <div className="flex items-center space-x-2">
+                      <span className={`w-3 h-3 rounded-full ${colorClass}`}></span>
+                      <span className="font-semibold text-slate-700">{category.name}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-bold text-slate-800">৳{parseFloat(category.total_revenue).toFixed(2)}</span>
+                      <span className="text-xs text-slate-500 ml-2">({category.total_sales} sales)</span>
+                    </div>
+                  </div>
+                  <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div
+                      className={`${colorClass} h-full rounded-full transition-all duration-500`}
+                      style={{ width: `${percentage}%` }}
+                    ></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Enhanced Quick Actions */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
+        <h3 className="text-lg font-bold text-slate-800 mb-4">Quick Actions</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <a
+            href="#"
+            onClick={(e) => { e.preventDefault(); onNavigate('/checkout'); }}
+            className="flex flex-col items-center justify-center p-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl transition-colors group"
+          >
+            <svg className="w-6 h-6 mb-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-xs font-semibold">New Sale</span>
+          </a>
+          <a
+            href="#"
+            onClick={(e) => { e.preventDefault(); onNavigate('/products'); }}
+            className="flex flex-col items-center justify-center p-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl transition-colors group"
+          >
+            <svg className="w-6 h-6 mb-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            <span className="text-xs font-semibold">Add Product</span>
+          </a>
+          <a
+            href="#"
+            onClick={(e) => { e.preventDefault(); onNavigate('/customers'); }}
+            className="flex flex-col items-center justify-center p-4 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl transition-colors group"
+          >
+            <svg className="w-6 h-6 mb-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 (4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
+            <span className="text-xs font-semibold">Add Customer</span>
+          </a>
+          <a
+            href="#"
+            onClick={(e) => { e.preventDefault(); onNavigate('/sales'); }}
+            className="flex flex-col items-center justify-center p-4 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-xl transition-colors group"
+          >
+            <svg className="w-6 h-6 mb-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span className="text-xs font-semibold">View Reports</span>
+          </a>
+        </div>
+      </div>
+
+      {/* Last Updated Footer */}
+      <div className="text-center text-xs text-slate-400">
+        Last updated: {lastRefresh.toLocaleString()}
+      </div>
 
     </div>
   );
